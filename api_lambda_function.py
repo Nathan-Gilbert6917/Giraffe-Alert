@@ -48,7 +48,6 @@ def upload_image(img_file_path, object_key):
         s3 = boto3.resource('s3')
         bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
         bucket.upload_file(img_file_path, object_key)
-        # s3.upload_file(img_file_path, os.environ['S3_BUCKET_NAME'] , object_key)
     except Exception as e:
         return {
             'statusCode': 500,
