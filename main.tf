@@ -5,11 +5,11 @@ provider "aws" {
 
 # Define Local Variables
 locals {
-  image_api_bucket = "your-upload-bucket-name" # Change this to your desired upload bucket
+  image_api_bucket = "giraffe-upload-bucket" # Change this to your desired upload bucket
   detected_images_bucket     = "detected-images-bucket"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
-  amplify_repo               = "your-amplify-repo-name" # Change this to
+  amplify_repo               = "term-project-team05" # Change this to
 }
 
 ######## User Notification ########
@@ -295,8 +295,13 @@ resource "aws_lambda_permission" "test" {
 #### Amplify Frontend ####
 
 # Define the Amplify resources for the frontend
-#resource "aws_amplify_app" "giraffe_alert_app" {
-#  name          = "giraffe_alert_app"
-#  repository    = "${local.amplify_repo}" # TODO: Change to repo
-#}
+resource "aws_amplify_app" "giraffe_alert_app" {
+  name          = "giraffe_alert_app"
+  repository    = "${local.amplify_repo}"
+}
+
+resource "aws_amplify_branch" "amplify_branch" {
+  app_id      = aws_amplify_app.giraffe_alert_app.id
+  branch_name = "main"
+}
 
