@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    # IMPORTANT - Please verify your build commands
+    preBuild: 
+      commands:
+        - cd giraffe-gang
+        - npm ci
+    build:
+      commands:
+        - npm run build
+        - ls -la
+  artifacts:
+    # IMPORTANT - Please verify your build output directory
+    baseDirectory: giraffe-gang/build
+    files:
+      - '**/*'
+  cache:
+    paths: 
+      - node_modules/**/*
