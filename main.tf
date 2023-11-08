@@ -9,7 +9,7 @@ locals {
   detected_images_bucket     = "detected-images-bucket"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
-  amplify_repo               = "term-project-team05" # Change this to
+  amplify_repo               = "term-project-team05" # Change this to your frontend repo
 }
 
 ######## User Notification ########
@@ -37,6 +37,33 @@ resource "aws_s3_bucket" "detected_images_bucket" {
   force_destroy = true
 }
 
+# Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
+resource "aws_s3_bucket_public_access_block" "example" {
+  bucket = aws_s3_bucket.detected_images_bucket.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Define policy for detected images s3 bucket for public read access
+resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
+  depends_on = [ aws_s3_bucket_public_access_block.example ]
+  bucket = aws_s3_bucket.detected_images_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject",
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = "s3:GetObject",
+        Resource  = "arn:aws:s3:::${local.detected_images_bucket}/*",
+      },
+    ],
+  })
+}
 
 #### RDS Database ####
 
