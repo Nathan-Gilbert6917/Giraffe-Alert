@@ -10,6 +10,11 @@ locals {
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "term-project-team05" # Change this to your frontend repo
+  db_schema_sql              = "giraffe_db_schema.sql" # Change this to your database schema sql file
+  db_preload_data_sql        = "giraffe_db_preload_data.sql" # Change this to your database preload sql file
+  db_name                    = "giraffe_db_name" # Change this to your database name
+  db_username                = "giraffe_db_user" # Change this to your desired database username
+  db_password                = "muchsecurity" # Change this to a better password
 }
 
 ######## User Notification ########
@@ -68,40 +73,90 @@ resource "aws_s3_bucket_policy" "allow_access_from_another_account" {
 #### RDS Database ####
 
 # Define a RDS database to hold alerts and reports
-# TODO: Determine if the database will hold users subscribed for email alert
-# TODO: Fill in name, username, password
-#resource "aws_db_instance" "main_db_instance" {
-#  allocated_storage    = 20
-#  storage_type         = "gp2"
-#  engine               = "mysql"
-#  engine_version       = "5.7"
-#  instance_class       = "db.t2.micro"
-#  name                 = "yourdb"
-#  username             = "yourdbuser"
-#  password             = "yourdbpassword"
-#}
+resource "aws_db_instance" "main_db_instance" {
+  allocated_storage      = 20
+  storage_type           = "gp2"
+  engine                 = "mysql"
+  engine_version         = "8.0.33"
+  instance_class         = "db.t2.micro"
+  db_name                = "${local.db_name}"
+  username               = "${local.db_username}"
+  password               = "${local.db_password}"
+  publicly_accessible    = true
+  skip_final_snapshot    = true
+  vpc_security_group_ids = [aws_security_group.sg.id]
+}
 
-# TODO: Load Schema (Load Script)
+# Create a security group within the VPC that allows for open connetions in and out
+resource "aws_security_group" "sg" {
+  name = "sg"
+  description = "Open security group"
 
-# TODO: Preload 3 days of alerts (Load Script)
+  # Allow all inbound traffic
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow all outbound traffic.
+  egress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    self        = true
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Define trigger for Lambda on Terraform Load
+resource "terraform_data" "trigger_lambda" {
+  depends_on = [aws_lambda_function.apply_sql_lambda, aws_db_instance.main_db_instance]
+  provisioner "local-exec" {
+    command = "aws lambda invoke --function-name ${aws_lambda_function.apply_sql_lambda.function_name} /dev/null"
+  }
+}
 
 ######## Lambda Functions ########
+
+#### SQL applier Lambda Function ####
+resource "aws_lambda_function" "apply_sql_lambda" {
+  depends_on = [aws_db_instance.main_db_instance]
+  filename      = "apply_sql_lambda_payload.zip"
+  function_name = "apply_sql_lambda"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "setup_db_lambda_function.lambda_handler"
+  runtime       = "python3.8"
+  source_code_hash = data.archive_file.apply_sql_lambda_code.output_base64sha256
+  environment {
+    variables = {
+      S3_BUCKET_NAME   = "${local.image_api_bucket}"
+      SQL_SCHEMA       = "${local.db_schema_sql}"
+      SQL_PRELOAD_DATA = "${local.db_preload_data_sql}"
+      DB_HOST          = "${aws_db_instance.main_db_instance.endpoint}"
+      DB_USER          = "${local.db_username}"
+      DB_PASSWORD      = "${local.db_password}"
+      DB_NAME          = "${local.db_name}"
+    }
+  }
+}
 
 #### Image API Lambda Function ####
 
 # Define the AWS Lambda function
 resource "aws_lambda_function" "download_giraffe_image" {
-  filename      = "api_lambda_function_payload.zip"
-  function_name = "download_giraffe_image"
-  role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "api_lambda_function.lambda_handler"
-  runtime       = "python3.8"
+  filename         = "api_lambda_function_payload.zip"
+  function_name    = "download_giraffe_image"
+  role             = aws_iam_role.iam_for_lambda.arn
+  handler          = "api_lambda_function.lambda_handler"
+  runtime          = "python3.8"
   source_code_hash = data.archive_file.image_api_lambda_code.output_base64sha256
-  timeout       = 5
+  timeout          = 5
   # Define environment variables for the Lambda function
   environment {
     variables = {
-      S3_BUCKET_NAME = "${local.image_api_bucket}"
+      S3_BUCKET_NAME   = "${local.image_api_bucket}"
     }
   }
 }
@@ -124,6 +179,10 @@ resource "aws_lambda_function" "rekognition_handler" {
       SNS_TOPIC_ARN = aws_sns_topic.giraffe_alert.arn
       MAX_LABELS = "${local.rekognition_max_labels}"
       MIN_CONFIDENCE = "${local.rekognition_min_confidence}"
+      DB_HOST     = "${aws_db_instance.main_db_instance.endpoint}"
+      DB_USER     = "${local.db_username}"
+      DB_PASSWORD = "${local.db_password}"
+      DB_NAME     = "${local.db_name}"
     }
   }
 }
@@ -131,23 +190,33 @@ resource "aws_lambda_function" "rekognition_handler" {
 #### Report Generator Lambda Function ####
 
 # Define the AWS Lambda function
-#resource "aws_lambda_function" "report_generator" {
-#  filename      = "report_generator_lambda_function_payload.zip"
-#  function_name = "report_generator"
-#  role          = aws_iam_role.iam_for_lambda.arn
-#  handler       = "report_generator.lambda_handler"
-#  runtime       = "python3.8"
-#  source_code_hash = data.archive_file.report_generator_lambda_code.output_base64sha256
-#  timeout       = 5
-#  # Define environment variables for the Lambda function
-#  environment {
-#    variables = {
-#      RDS_ENDPOINT = aws_db_instance.main_db_instance.endpoint
-#    }
-#  }
-#}
+resource "aws_lambda_function" "report_generator" {
+  filename      = "report_generator_lambda_function_payload.zip"
+  function_name = "report_generator"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "report_generator_lambda_function.lambda_handler"
+  runtime       = "python3.8"
+  source_code_hash = data.archive_file.report_generator_lambda_code.output_base64sha256
+  timeout       = 5
+  # Define environment variables for the Lambda function
+  environment {
+    variables = {
+      DB_HOST     = "${aws_db_instance.main_db_instance.endpoint}"
+      DB_USER     = "${local.db_username}"
+      DB_PASSWORD = "${local.db_password}"
+      DB_NAME     = "${local.db_name}"
+    }
+  }
+}
 
 #### Archive Files for the AWS Lambda functions code ####
+
+# Define an archive of the Setup DB_HOST Lambda function code (ZIP file)
+data "archive_file" "apply_sql_lambda_code" {
+  type         = "zip"
+  source_file  = "setup_db_lambda_function.py"
+  output_path  = "apply_sql_lambda_payload.zip"
+}
 
 # Define an archive of the Image API Lambda function code (ZIP file)
 data "archive_file" "image_api_lambda_code" {
@@ -164,11 +233,11 @@ data "archive_file" "rekognition_lambda_code" {
 }
 
 # Define an archive of the Report Generator Lambda function code (ZIP file)
-#data "archive_file" "report_generator_lambda_code" {
-#  type        = "zip"
-#  source_file  = "report_generator_lambda_function.py"
-#  output_path = "report_generator_lambda_function_payload.zip"
-#}
+data "archive_file" "report_generator_lambda_code" {
+  type        = "zip"
+  source_file  = "report_generator_lambda_function.py"
+  output_path = "report_generator_lambda_function_payload.zip"
+}
 
 #### IAM Role for Lambda execution ####
 
@@ -229,17 +298,20 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
 
 # Define attachment for CloudWatch Log permission to lambda IAM role
 resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_logs" {
+  depends_on = [aws_iam_role_policy_attachment.lambda_s3_policy_attachment]
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   role       = aws_iam_role.iam_for_lambda.name
 }
 
 # Define attachment for Rekognition DetectLabels permission to lambda IAM role
 #resource "aws_iam_role_policy_attachment" "rekognition_lambda_read_only_policy_attachment" {
+#  depends_on = [aws_iam_role_policy_attachment.rekognition_lambda_full_access_policy_attachment]
 #  policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionReadOnlyAccess"
 #  role       = aws_iam_role.iam_for_lambda.name
 #}
 
 resource "aws_iam_role_policy_attachment" "rekognition_lambda_full_access_policy_attachment" {
+  depends_on = [aws_iam_role_policy_attachment.lambda_cloudwatch_logs]
   policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
   role       = aws_iam_role.iam_for_lambda.name
 }
@@ -250,13 +322,13 @@ resource "aws_iam_role_policy_attachment" "rekognition_lambda_full_access_policy
 
 # Define a CloudWatch Events rule for scheduling Lambda execution
 resource "aws_cloudwatch_event_rule" "image_api_schedule" {
-  name                = "lambda_schedule"
+  name                = "image_api_schedule"
   description         = "Schedule for Lambda execution"
   schedule_expression = "rate(1 minute)"
 }
 
 # Define the target for the CloudWatch Events rule (the Image API Lambda function)
-resource "aws_cloudwatch_event_target" "lambda_target" {
+resource "aws_cloudwatch_event_target" "image_api_target" {
   rule = aws_cloudwatch_event_rule.image_api_schedule.name
   arn  = aws_lambda_function.download_giraffe_image.arn
   target_id = "download_giraffe_image"
@@ -273,28 +345,28 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_download_giraffe_imag
 
 #### Hourly Report Cloud Watch Event Rule ####
 
-## Define a CloudWatch Events rule for scheduling the Report Generator Lambda execution (hourly)
-#resource "aws_cloudwatch_event_rule" "hourly_report_schedule" {
-#  name                = "hourly_report_schedule"
-#  description         = "Hourly schedule for Report Generator Lambda"
-#  schedule_expression = "rate(1 hour)"
-#}
-#
-## Define the target for the CloudWatch Events rule (the Report Generator Lambda function)
-#resource "aws_cloudwatch_event_target" "report_generator_target" {
-#  rule = aws_cloudwatch_event_rule.hourly_report_schedule.name
-#  arn  = aws_lambda_function.report_generator.arn
-#  target_id = "report_generator"
-#}
-#
-## Define the permissions for the CloudWatch Events to call the Report Generator Lambda function
-#resource "aws_lambda_permission" "allow_cloudwatch_to_call_report_generator" {
-#    statement_id = "AllowExecutionFromCloudWatch"
-#    action = "lambda:InvokeFunction"
-#    function_name = aws_lambda_function.report_generator.function_name
-#    principal = "events.amazonaws.com"
-#    source_arn = aws_cloudwatch_event_rule.hourly_report_schedule.arn
-#}
+# Define a CloudWatch Events rule for scheduling the Report Generator Lambda execution (hourly)
+resource "aws_cloudwatch_event_rule" "hourly_report_schedule" {
+  name                = "hourly_report_schedule"
+  description         = "Hourly schedule for Report Generator Lambda"
+  schedule_expression = "rate(1 hour)"
+}
+
+# Define the target for the CloudWatch Events rule (the Report Generator Lambda function)
+resource "aws_cloudwatch_event_target" "report_generator_target" {
+  rule = aws_cloudwatch_event_rule.hourly_report_schedule.name
+  arn  = aws_lambda_function.report_generator.arn
+  target_id = "report_generator"
+}
+
+# Define the permissions for the CloudWatch Events to call the Report Generator Lambda function
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_report_generator" {
+    statement_id = "AllowExecutionFromCloudWatch"
+    action = "lambda:InvokeFunction"
+    function_name = aws_lambda_function.report_generator.function_name
+    principal = "events.amazonaws.com"
+    source_arn = aws_cloudwatch_event_rule.hourly_report_schedule.arn
+}
 
 #### S3 Event Rule to Trigger Rekognition Lambda ####
 
@@ -321,14 +393,14 @@ resource "aws_lambda_permission" "test" {
 
 #### Amplify Frontend ####
 
-# Define the Amplify resources for the frontend
-resource "aws_amplify_app" "giraffe_alert_app" {
-  name          = "giraffe_alert_app"
-  repository    = "${local.amplify_repo}"
-}
-
-resource "aws_amplify_branch" "amplify_branch" {
-  app_id      = aws_amplify_app.giraffe_alert_app.id
-  branch_name = "main"
-}
+## Define the Amplify resources for the frontend
+#resource "aws_amplify_app" "giraffe_alert_app" {
+#  name          = "giraffe_alert_app"
+#  repository    = "${local.amplify_repo}"
+#}
+#
+#resource "aws_amplify_branch" "amplify_branch" {
+#  app_id      = aws_amplify_app.giraffe_alert_app.id
+#  branch_name = "main"
+#}
 

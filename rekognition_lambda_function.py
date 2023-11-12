@@ -7,7 +7,9 @@ If a giraffe is detected the function will send an email notification to the SNS
 """
 import os
 import json
+import pymysql
 import boto3
+from datetime import datetime
 
 # Initialize the AWS clients
 s3_client = boto3.client('s3')
@@ -16,6 +18,31 @@ sns_client = boto3.client('sns')
 
 # S3 bucket for detected images
 detected_images_bucket = os.environ['S3_BUCKET_NAME']
+
+
+def insert_alert(alert_data):
+    # MySQL connection
+    connection = pymysql.connect(
+        host=os.environ['DB_HOST'],
+        user=os.environ['DB_USER'],
+        passwd=os.environ['DB_PASSWORD'],
+        db=os.environ['DB_NAME'],
+        connect_timeout=5
+    )
+
+    alert_date = alert_data['alert_date']
+    giraffe_count = alert_data['giraffe_count']
+    confidence = alert_data['confidence']
+    image_url = alert_data['image_url']
+
+    insert_alert_query = f"""
+        INSERT INTO Alerts (alert_date, giraffe_count, confidence, image_url)
+        VALUES ('{alert_date}', {giraffe_count}, {confidence}, '{image_url}')
+    """
+
+    with connection.cursor() as cur:
+        cur.execute(insert_alert_query)
+    connection.commit()
 
 
 def lambda_handler(event, context):
@@ -72,7 +99,20 @@ def lambda_handler(event, context):
                 Subject="Giraffe Alert!"
             )
 
-            # TODO: Add Alert to RDS DB
+            current_datetime = datetime.now()
+
+            # Format the datetime in a way SQL understands (YYYY-MM-DD HH:MM:SS)
+            sql_formatted_datetime = current_datetime.strftime(
+                '%Y-%m-%d %H:%M:%S'
+            )
+
+            alert_data = {
+                'alert_date': sql_formatted_datetime,
+                'giraffe_count': giraffe_count,
+                'confidence': giraffe_confidence,
+                'image_url': detected_image_url
+            }
+            insert_alert(alert_data)
 
         else:
             print("No giraffe detected in the image.")
