@@ -303,13 +303,6 @@ resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_logs" {
   role       = aws_iam_role.iam_for_lambda.name
 }
 
-# Define attachment for Rekognition DetectLabels permission to lambda IAM role
-#resource "aws_iam_role_policy_attachment" "rekognition_lambda_read_only_policy_attachment" {
-#  depends_on = [aws_iam_role_policy_attachment.rekognition_lambda_full_access_policy_attachment]
-#  policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionReadOnlyAccess"
-#  role       = aws_iam_role.iam_for_lambda.name
-#}
-
 resource "aws_iam_role_policy_attachment" "rekognition_lambda_full_access_policy_attachment" {
   depends_on = [aws_iam_role_policy_attachment.lambda_cloudwatch_logs]
   policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
@@ -393,14 +386,14 @@ resource "aws_lambda_permission" "test" {
 
 #### Amplify Frontend ####
 
-## Define the Amplify resources for the frontend
-#resource "aws_amplify_app" "giraffe_alert_app" {
-#  name          = "giraffe_alert_app"
-#  repository    = "${local.amplify_repo}"
-#}
-#
-#resource "aws_amplify_branch" "amplify_branch" {
-#  app_id      = aws_amplify_app.giraffe_alert_app.id
-#  branch_name = "main"
-#}
+# Define the Amplify resources for the frontend
+resource "aws_amplify_app" "giraffe_alert_app" {
+  name          = "giraffe_alert_app"
+  repository    = "${local.amplify_repo}"
+}
+
+resource "aws_amplify_branch" "amplify_branch" {
+  app_id      = aws_amplify_app.giraffe_alert_app.id
+  branch_name = "main"
+}
 
