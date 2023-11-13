@@ -1,6 +1,6 @@
 import React from "react";
-import Navbar from "./Navbar.tsx";
-import "../styles/Reports.css"; // Import the CSS file
+import Navbar from "./Navbar.jsx";
+import "../styles/Reports.css";
 
 function Reports() {
   return (
@@ -8,7 +8,7 @@ function Reports() {
       <Navbar />
 
       <h1 className="reports-heading">Reports</h1>
-      {/* Add your reports content here */}
+      {/* Add reports content here */}
     </div>
   );
 }

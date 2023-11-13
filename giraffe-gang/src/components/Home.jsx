@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import img from "../assests/LiveFeed_placeholder.jpg";
-import Navbar from "./Navbar.tsx";
+import Navbar from "./Navbar.jsx";
 import "../styles/Home.css";
 
 function Home() {
