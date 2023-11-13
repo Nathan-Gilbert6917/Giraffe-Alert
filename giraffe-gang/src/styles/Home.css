@@ -1,0 +1,43 @@
+/* Home.css */
+
+/* Home styles */
+.home-container {
+  text-align: center;
+  padding: 20px;
+}
+
+.home-heading {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.live-feed-box {
+  text-align: center;
+}
+
+.live-feed-image {
+  max-width: 60%;
+  height: auto;
+}
+
+.subscription-box {
+  text-align: center;
+}
+
+.subscription-message {
+  margin-top: 10px;
+}
+
+.subscription-form {
+  margin-top: 10px;
+}
+
+.thank-you-message {
+  margin-top: 10px;
+  background-color: limegreen;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  width: 50%;
+  display: inline-block;
+}
