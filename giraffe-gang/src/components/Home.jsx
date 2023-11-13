@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import img from "../assests/LiveFeed_placeholder.jpg";
+import img from "../assets/LiveFeed_placeholder.jpg";
 import Navbar from "./Navbar.jsx";
 import "../styles/Home.css";
 
@@ -12,7 +12,7 @@ function Home() {
   };
 
   const handleSubscribe = () => {
-    //add backend call here
+    // add backend call here
     setSubscribed(true);
   };
 
@@ -42,8 +42,7 @@ function Home() {
           </div>
         ) : (
           <div className="thank-you-message">
-            <p>Thank you for subscribing!</p>
-            <p>You will be alerted when Giraffes are back.</p>
+            <p>Thank you for subscribing! You will be alerted when Giraffes are back.</p>
           </div>
         )}
       </div>
