@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import img from "../assets/LiveFeed_placeholder.jpg";
 import Navbar from "./Navbar.jsx";
+import LiveFeedImage from "./LiveFeedImage.jsx";
 import "../styles/Home.css";
 
 function Home() {
@@ -22,9 +22,7 @@ function Home() {
 
       <h1 className="home-heading">Giraffe Gang Live Feed Viewer</h1>
 
-      <div className="live-feed-box">
-        <img src={img} alt="Live Giraffe Feed" className="live-feed-image" />
-      </div>
+      <LiveFeedImage />
 
       <div className="subscription-box">
         <p className="subscription-message">
@@ -42,7 +40,10 @@ function Home() {
           </div>
         ) : (
           <div className="thank-you-message">
-            <p>Thank you for subscribing! You will be alerted when Giraffes are back.</p>
+            <p>
+              Thank you for subscribing! You will be alerted via email when
+              Giraffes are back.
+            </p>
           </div>
         )}
       </div>
