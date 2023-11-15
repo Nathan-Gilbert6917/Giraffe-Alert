@@ -9,7 +9,7 @@ locals {
   detected_images_bucket     = "detected-images-bucket"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
-  amplify_repo               = "term-project-team05" # Change this to your frontend repo
+  amplify_repo               = "git@github.com:SWEN-514-614-2231/term-project-team05.git"
   db_schema_sql              = "giraffe_db_schema.sql" # Change this to your database schema sql file
   db_preload_data_sql        = "giraffe_db_preload_data.sql" # Change this to your database preload sql file
   db_name                    = "giraffe_db_name" # Change this to your database name
@@ -389,11 +389,11 @@ resource "aws_lambda_permission" "test" {
 # Define the Amplify resources for the frontend
 resource "aws_amplify_app" "giraffe_alert_app" {
   name          = "giraffe_alert_app"
-  repository    = "${local.amplify_repo}"
+  repository    = "${local.amplify_repo}" # TODO: Change to repo
 }
 
 resource "aws_amplify_branch" "amplify_branch" {
-  app_id      = aws_amplify_app.giraffe_alert_app.id
+  app_id      = "${aws_amplify_app.giraffe_alert_app.id}"
   branch_name = "main"
 }
 
