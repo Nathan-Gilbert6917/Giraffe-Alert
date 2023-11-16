@@ -9,7 +9,7 @@ locals {
   detected_images_bucket     = "detected-images-bucket"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
-  amplify_repo               = "git@github.com:SWEN-514-614-2231/term-project-team05.git"
+  amplify_repo               = "git@github.com:SWEN-514-614-2231/term-project-team05"
   db_schema_sql              = "giraffe_db_schema.sql" # Change this to your database schema sql file
   db_preload_data_sql        = "giraffe_db_preload_data.sql" # Change this to your database preload sql file
   db_name                    = "giraffe_db_name" # Change this to your database name
