@@ -23,7 +23,7 @@ detected_images_bucket = os.environ['S3_BUCKET_NAME']
 def insert_alert(alert_data):
     # MySQL connection
     connection = pymysql.connect(
-        host=os.environ['DB_HOST'],
+        host=os.environ['DB_HOST'].split(":")[0],
         user=os.environ['DB_USER'],
         passwd=os.environ['DB_PASSWORD'],
         db=os.environ['DB_NAME'],

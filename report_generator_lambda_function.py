@@ -8,7 +8,7 @@ s3 = boto3.client('s3')
 def connect_db():
     # MySQL connection
     connection = pymysql.connect(
-        host=os.environ['DB_HOST'],
+        host=os.environ['DB_HOST'].split(":")[0],
         user=os.environ['DB_USER'],
         passwd=os.environ['DB_PASSWORD'],
         db=os.environ['DB_NAME'],
@@ -22,14 +22,15 @@ def generate_report(connection):
     with connection.cursor() as cur:
         # Create a Report
         insert_report_query = """
-            INSERT INTO Reports (creation_date)
-            VALUES (NOW())
+            INSERT INTO Reports (report_date)
+            VALUES (NOW());
         """
         cur.execute(insert_report_query)
 
         # Get the latest report for the id
-        cur.execute("SELECT LAST_INSERT_ID()")
+        cur.execute("SELECT LAST_INSERT_ID();")
         report_id = cur.fetchone()[0]
+        connection.commit()
         return report_id
 
 
@@ -43,20 +44,20 @@ def generate_report_alerts(connection, report_id):
         """
 
         cur.execute(past_3days_alert_ssql_query)
-
+        connection.commit()
         alerts = cur.fetchall()
 
         for alert in alerts:
-            insert_records_alerts_query = f"""
-                INSERT INTO Reports_Alerts (record_id, alert_id)
-                VALUES ({report_id}, {alert[0]})
+            insert_reports_alerts_query = f"""
+                INSERT INTO Reports_Alerts (report_id, alert_id)
+                VALUES ({report_id}, {alert[0]});
             """
-            cur.execute(insert_records_alerts_query)
+            cur.execute(insert_reports_alerts_query)
+        connection.commit()
 
 
 def cleanup_db(connection):
     # Clean up
-    connection.cursor.close()
     connection.close()
 
 

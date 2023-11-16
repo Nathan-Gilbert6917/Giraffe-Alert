@@ -7,7 +7,9 @@
 - Save this file
 
 # Getting Started
-Instantiate and connect to an EC2 instance, if it already has Terraform installed continue to next step, if not:
+- Create a S3 bucket named "giraffe-terra-test" or
+change to the one you set in the terraform file.
+- Instantiate and connect to an EC2 instance, if it already has Terraform installed continue to next step, if not:
 - `sudo yum install -y yum-utils`
 - `sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo`
 - `sudo yum -y install terraform`
@@ -18,8 +20,8 @@ Instantiate and connect to an EC2 instance, if it already has Terraform installe
 Once Terraform is successfully installed you need to transfer the Terraform files to our EC2 instance
 - Create a S3 Bucket
 - Once the bucket is created upload the folder containing the Terraform files
-- Run `aws s3 cp s3://[your bucket name] . --recursive`
-
+- Run `aws s3 cp s3://giraffe-terra-test . --recursive`
+- OR `aws s3 cp s3://[your-bucket-name] . --recursive`
 # Running Terraform
 With our files on our EC2 and Terraform installed, we are now ready to run our setup
 - Run `terraform init` to startup Terraform

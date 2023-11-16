@@ -5,14 +5,16 @@ provider "aws" {
 
 # Define Local Variables
 locals {
-  image_api_bucket = "giraffe-upload-bucket" # Change this to your desired upload bucket
-  detected_images_bucket     = "detected-images-bucket"
+  terraform_deploy_bucket    = "giraffe-terra-test" # Change this to the name of the bucket you are using to deploy terraform
+  image_api_bucket           = "giraffe-upload" # Change this to your desired upload bucket
+  detected_images_bucket     = "detected-images"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
-  amplify_repo               = "git@github.com:SWEN-514-614-2231/term-project-team05"
+  amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
+  github_access_token        = "gh-access-token" # Change this to your github access token
   db_schema_sql              = "giraffe_db_schema.sql" # Change this to your database schema sql file
   db_preload_data_sql        = "giraffe_db_preload_data.sql" # Change this to your database preload sql file
-  db_name                    = "giraffe_db_name" # Change this to your database name
+  db_name                    = "giraffe_db" # Change this to your database name
   db_username                = "giraffe_db_user" # Change this to your desired database username
   db_password                = "muchsecurity" # Change this to a better password
 }
@@ -44,6 +46,7 @@ resource "aws_s3_bucket" "detected_images_bucket" {
 
 # Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
 resource "aws_s3_bucket_public_access_block" "example" {
+  depends_on = [aws_s3_bucket.detected_images_bucket]
   bucket = aws_s3_bucket.detected_images_bucket.id
 
   block_public_acls       = false
@@ -129,11 +132,10 @@ resource "aws_lambda_function" "apply_sql_lambda" {
   handler       = "setup_db_lambda_function.lambda_handler"
   runtime       = "python3.8"
   source_code_hash = data.archive_file.apply_sql_lambda_code.output_base64sha256
+  layers = [aws_lambda_layer_version.python38-pymysql-layer.arn]
+
   environment {
     variables = {
-      S3_BUCKET_NAME   = "${local.image_api_bucket}"
-      SQL_SCHEMA       = "${local.db_schema_sql}"
-      SQL_PRELOAD_DATA = "${local.db_preload_data_sql}"
       DB_HOST          = "${aws_db_instance.main_db_instance.endpoint}"
       DB_USER          = "${local.db_username}"
       DB_PASSWORD      = "${local.db_password}"
@@ -190,6 +192,8 @@ resource "aws_lambda_function" "rekognition_handler" {
   runtime       = "python3.8"
   source_code_hash = data.archive_file.rekognition_lambda_code.output_base64sha256
   timeout       = 5
+  layers = [aws_lambda_layer_version.python38-pymysql-layer.arn]
+
   # Define environment variables for the Lambda function
   environment {
     variables = {
@@ -216,6 +220,8 @@ resource "aws_lambda_function" "report_generator" {
   runtime       = "python3.8"
   source_code_hash = data.archive_file.report_generator_lambda_code.output_base64sha256
   timeout       = 5
+  layers = [aws_lambda_layer_version.python38-pymysql-layer.arn]
+
   # Define environment variables for the Lambda function
   environment {
     variables = {
@@ -257,6 +263,14 @@ data "archive_file" "report_generator_lambda_code" {
   output_path = "report_generator_lambda_function_payload.zip"
 }
 
+# Define an archive of the PyMySQL package (ZIP file)
+resource "aws_lambda_layer_version" "python38-pymysql-layer" {
+    filename            = "layers/python_pymysql.zip"
+    layer_name          = "python_pymysql"
+    source_code_hash    = "${filebase64sha256("layers/python_pymysql.zip")}"
+    compatible_runtimes = ["python3.8"]
+}
+
 # Define an archive of the SNS topic Subscriber Lambda function code (ZIP file)
 
 data "archive_file" "add_subscriber_lambda_code" {
@@ -264,6 +278,7 @@ data "archive_file" "add_subscriber_lambda_code" {
   source_file = "add_subscriber_lambda_function.py"
   output_path = "add_subscriber_to_giraffe_alert_payload.zip"
 }
+
 
 #### IAM Role for Lambda execution ####
 
@@ -392,7 +407,7 @@ resource "aws_lambda_permission" "allow_cloudwatch_to_call_download_giraffe_imag
 resource "aws_cloudwatch_event_rule" "hourly_report_schedule" {
   name                = "hourly_report_schedule"
   description         = "Hourly schedule for Report Generator Lambda"
-  schedule_expression = "rate(1 hour)"
+  schedule_expression = "rate(5 minutes)"
 }
 
 # Define the target for the CloudWatch Events rule (the Report Generator Lambda function)
@@ -431,6 +446,7 @@ resource "aws_lambda_permission" "test" {
   principal = "s3.amazonaws.com"
   source_arn = "arn:aws:s3:::${aws_s3_bucket.image_api_bucket.id}"
 }
+
 
 #### API Gateway for SNS topic lambda function ####
 
@@ -479,7 +495,7 @@ resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
   source_arn    = "${aws_api_gateway_rest_api.subscriber_management_api.execution_arn}/*/*"
 }
 
-### CORS 
+### CORS
 
 # Add OPTIONS method to handle CORS preflight requests
 resource "aws_api_gateway_method" "subscriber_options_method" {
@@ -550,6 +566,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
 resource "aws_amplify_app" "giraffe_alert_app" {
   name          = "giraffe_alert_app"
   repository    = "${local.amplify_repo}" # TODO: Change to repo
+  access_token = "${local.github_access_token}"
 }
 
 resource "aws_amplify_branch" "amplify_branch" {
