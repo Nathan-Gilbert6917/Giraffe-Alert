@@ -142,6 +142,24 @@ resource "aws_lambda_function" "apply_sql_lambda" {
   }
 }
 
+#### SNS Topic subscriber lamba function ####
+
+resource "aws_lambda_function" "add_subscriber_to_giraffe_alert" {
+  filename         = "add_subscriber_to_giraffe_alert_payload.zip"
+  function_name    = "add_subscriber_to_giraffe_alert"
+  role             = aws_iam_role.iam_for_lambda.arn
+  handler          = "add_subscriber_lambda_function.lambda_handler"
+  runtime          = "python3.8"
+  source_code_hash = data.archive_file.add_subscriber_lambda_code.output_base64sha256
+
+  environment {
+    variables = {
+      SNS_TOPIC_ARN = aws_sns_topic.giraffe_alert.arn
+    }
+  }
+}
+
+
 #### Image API Lambda Function ####
 
 # Define the AWS Lambda function
@@ -239,6 +257,14 @@ data "archive_file" "report_generator_lambda_code" {
   output_path = "report_generator_lambda_function_payload.zip"
 }
 
+# Define an archive of the SNS topic Subscriber Lambda function code (ZIP file)
+
+data "archive_file" "add_subscriber_lambda_code" {
+  type        = "zip"
+  source_file = "add_subscriber_lambda_function.py"
+  output_path = "add_subscriber_to_giraffe_alert_payload.zip"
+}
+
 #### IAM Role for Lambda execution ####
 
 # Define the IAM role for Lambda execution
@@ -288,6 +314,23 @@ resource "aws_iam_policy" "lambda_s3_policy" {
   })
 }
 
+# Define an IAM policy that allows to subscribe to topic through lambda
+resource "aws_iam_policy" "lambda_sns_subscribe_policy" {
+  name        = "lambda_sns_subscribe_policy"
+  description = "IAM policy for Lambda function to subscribe to SNS topic"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "SNS:Subscribe",
+        Resource = aws_sns_topic.giraffe_alert.arn
+      }
+    ],
+  })
+}
+
 #### Lambda Policy Attachment ####
 
 # Define attachment for S3 put permission to lambda IAM role
@@ -308,6 +351,13 @@ resource "aws_iam_role_policy_attachment" "rekognition_lambda_full_access_policy
   policy_arn = "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
   role       = aws_iam_role.iam_for_lambda.name
 }
+
+# Define attachment for lambda for subscribe iam
+resource "aws_iam_role_policy_attachment" "lambda_sns_subscribe_policy_attachment" {
+  policy_arn = aws_iam_policy.lambda_sns_subscribe_policy.arn
+  role       = aws_iam_role.iam_for_lambda.name
+}
+
 
 ######## Lambda Function Triggers ########
 
@@ -382,6 +432,116 @@ resource "aws_lambda_permission" "test" {
   source_arn = "arn:aws:s3:::${aws_s3_bucket.image_api_bucket.id}"
 }
 
+#### API Gateway for SNS topic lambda function ####
+
+resource "aws_api_gateway_rest_api" "subscriber_management_api" {
+  name        = "GiraffeSubscriberManagementAPI"
+  description = "API for managing Giraffe Alert subscribers"
+}
+
+resource "aws_api_gateway_resource" "subscriber_endpoint" {
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  parent_id   = aws_api_gateway_rest_api.subscriber_management_api.root_resource_id
+  path_part   = "subscriber"
+}
+
+resource "aws_api_gateway_method" "subscriber_post_method" {
+  rest_api_id   = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method = aws_api_gateway_method.subscriber_post_method.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.add_subscriber_to_giraffe_alert.invoke_arn
+}
+
+resource "aws_api_gateway_deployment" "subscriber_api_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.subscriber_lambda_integration,
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  stage_name  = "dev"
+}
+
+resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
+  statement_id  = "AllowSubscriberAPIInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.add_subscriber_to_giraffe_alert.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.subscriber_management_api.execution_arn}/*/*"
+}
+
+### CORS 
+
+# Add OPTIONS method to handle CORS preflight requests
+resource "aws_api_gateway_method" "subscriber_options_method" {
+  rest_api_id   = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+# Add a Mock Integration to return the CORS headers
+resource "aws_api_gateway_integration" "subscriber_options_integration" {
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method = aws_api_gateway_method.subscriber_options_method.http_method
+
+  type                    = "MOCK"
+  request_templates       = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+# Define the response for OPTIONS method
+resource "aws_api_gateway_method_response" "cors_response" {
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method = aws_api_gateway_method.subscriber_options_method.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+# Define the integration response to include CORS headers
+resource "aws_api_gateway_integration_response" "cors_integration_response" {
+  depends_on = [
+    aws_api_gateway_integration.subscriber_options_integration
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  resource_id = aws_api_gateway_resource.subscriber_endpoint.id
+  http_method = aws_api_gateway_method.subscriber_options_method.http_method
+  status_code = aws_api_gateway_method_response.cors_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+
+  response_templates = {
+    "application/json" = ""
+  }
+}
+
+
 ######## Frontend ########
 
 #### Amplify Frontend ####
@@ -396,4 +556,5 @@ resource "aws_amplify_branch" "amplify_branch" {
   app_id      = "${aws_amplify_app.giraffe_alert_app.id}"
   branch_name = "main"
 }
+
 

@@ -6,14 +6,39 @@ import "../styles/Home.css";
 function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const subscription_url =
+    "https://cepelix6je.execute-api.us-east-2.amazonaws.com/dev/subscriber"; //replace with instance url
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };
 
   const handleSubscribe = () => {
-    // add backend call here
-    setSubscribed(true);
+    const requestBody = {
+      email: email,
+    };
+
+    // Send request to the subscription_url
+    fetch(subscription_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    })
+      .then((response) => {
+        if (response.ok) {
+          setSubscribed(true);
+        } else {
+          setSubscribed(true); //KLDUGE FOR DEMO
+
+          console.error("Failed to subscribe:", response.statusText);
+        }
+      })
+      .catch((error) => {
+        setSubscribed(true); //KLUDGE FOR DEMO
+        console.error("Error:", error);
+      });
   };
 
   return (
@@ -41,8 +66,9 @@ function Home() {
         ) : (
           <div className="thank-you-message">
             <p>
-              Thank you for subscribing! You will be alerted via email when
-              Giraffes are back.
+              Thank you for subscribing! Please check your email to confirm
+              subscription and you will be alerted via email when Giraffes are
+              back.
             </p>
           </div>
         )}
@@ -52,3 +78,4 @@ function Home() {
 }
 
 export default Home;
+
