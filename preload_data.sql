@@ -26,7 +26,7 @@ VALUES
     ('2023-11-09 22:30:00');
 
 -- Insert test data into Records_Alerts table
-INSERT INTO Reports_Alerts (reports_id, alert_id)
+INSERT INTO Reports_Alerts (report_id, alert_id)
 VALUES
     (1, 1),
     (1, 2),
