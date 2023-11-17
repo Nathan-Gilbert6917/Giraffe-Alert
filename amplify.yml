@@ -6,6 +6,8 @@ frontend:
       commands:
         - cd giraffe-gang
         - npm ci
+        - OUTPUT=$(terraform output -raw api_gateway_url)
+        - printf "const API_URL = \"${OUTPUT}\";\n\nexport default API_URL;" > src/data/output.js
     build:
       commands:
         - npm run build

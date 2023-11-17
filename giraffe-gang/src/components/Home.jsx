@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import LiveFeedImage from "./LiveFeedImage.jsx";
+import {API_URL} from "../data/output.js";
 import "../styles/Home.css";
 
 function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const subscription_url =
-    "https://cepelix6je.execute-api.us-east-2.amazonaws.com/dev/subscriber"; //replace with instance url
+  const subscription_url = API_URL; //replace with instance url
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
