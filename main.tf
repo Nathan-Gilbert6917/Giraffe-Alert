@@ -7,6 +7,7 @@ provider "aws" {
 locals {
   terraform_deploy_bucket    = "giraffe-terra-test" # Change this to the name of the bucket you are using to deploy terraform
   image_api_bucket           = "giraffe-upload" # Change this to your desired upload bucket
+  api_gateway_bucket         = "api-gateway-endpoint"
   detected_images_bucket     = "detected-images"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
@@ -41,6 +42,12 @@ resource "aws_s3_bucket" "image_api_bucket" {
 # Define an S3 bucket for uploading images with Giraffes detected
 resource "aws_s3_bucket" "detected_images_bucket" {
   bucket        = local.detected_images_bucket
+  force_destroy = true
+}
+
+# Define an S3 bucket for uploading the api gateway endpoint
+resource "aws_s3_bucket" "gateway_api_bucket" {
+  bucket        = local.api_gateway_bucket
   force_destroy = true
 }
 
@@ -485,6 +492,10 @@ resource "aws_api_gateway_deployment" "subscriber_api_deployment" {
 
   rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
   stage_name  = "dev"
+  
+  provisioner "local-exec" {
+    command = "bash api.sh ${self.invoke_url} ${local.api_gateway_bucket}"
+  }
 }
 
 resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
