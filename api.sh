@@ -8,5 +8,5 @@ if [ ! -f FILE_PATH ]
 then
     touch ${FILE_PATH}
 fi
-printf "const API_URL = \"$1\";\n\nexport default API_URL;" > ${FILE_PATH}
+printf "export const API_URL = \"$1\";" > ${FILE_PATH}
 aws s3 cp "${DIRECTORY}" s3://$2 --recursive
