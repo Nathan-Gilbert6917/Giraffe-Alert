@@ -5,6 +5,7 @@ frontend:
     preBuild: 
       commands:
         - cd giraffe-gang
+        - aws s3 cp s3://api-gateway-endpoint-sah/data /src/data --recursive --delete # Change this to your desired bucket
         - npm ci
     build:
       commands:

@@ -7,7 +7,7 @@ provider "aws" {
 locals {
   terraform_deploy_bucket    = "giraffe-terra-test" # Change this to the name of the bucket you are using to deploy terraform
   image_api_bucket           = "giraffe-upload" # Change this to your desired upload bucket
-  api_gateway_bucket         = "api-gateway-endpoint"
+  api_gateway_bucket         = "api-gateway-endpoint" # Change this to your desired bucket
   detected_images_bucket     = "detected-images"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
