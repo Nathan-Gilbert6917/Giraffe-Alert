@@ -2,6 +2,7 @@
   "dev": {
     "awscloudformation": {
       "AuthRoleName": "amplify-giraffegang-dev-145434-authRole",
+      "ServiceRoleName": "AmplifyServiceRole",
       "UnauthRoleArn": "arn:aws:iam::375366340679:role/amplify-giraffegang-dev-145434-unauthRole",
       "AuthRoleArn": "arn:aws:iam::375366340679:role/amplify-giraffegang-dev-145434-authRole",
       "Region": "us-east-1",
