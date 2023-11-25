@@ -5,7 +5,7 @@ frontend:
     preBuild: 
       commands:
         - cd giraffe-gang
-        - aws s3 cp s3://api-gateway-endpoint-sah/data/output.js src/data/output.js # Change this to your desired bucket
+        - aws s3 cp s3://api-gateway-endpoint-sah/output.js src/data/output.js # Change this to your desired bucket
         - npm ci
     build:
       commands:
