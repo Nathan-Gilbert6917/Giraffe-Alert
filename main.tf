@@ -494,7 +494,7 @@ resource "aws_api_gateway_deployment" "subscriber_api_deployment" {
   stage_name  = "dev"
   
   provisioner "local-exec" {
-    command = "bash api.sh ${self.invoke_url} ${local.api_gateway_bucket}"
+    command = "sh api.sh ${self.invoke_url} ${local.api_gateway_bucket}"
   }
 }
 
