@@ -7,6 +7,7 @@ frontend:
         - cd giraffe-gang
         - wget https://api-gateway-endpoint-sah.s3.amazonaws.com/output.js # Change this to your desired bucket
         - mv output.js src/data/output.js
+        - cat src/data/output.js
         - npm ci
     build:
       commands:
