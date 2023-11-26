@@ -46,9 +46,40 @@ resource "aws_s3_bucket" "detected_images_bucket" {
 }
 
 # Define an S3 bucket for uploading the api gateway endpoint
-resource "aws_s3_bucket" "gateway_api_bucket" {
+resource "aws_s3_bucket" "api_gateway_bucket" {
   bucket        = local.api_gateway_bucket
   force_destroy = true
+}
+
+# Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
+resource "aws_s3_bucket_public_access_block" "api_gateway_bucket_access" {
+  depends_on = [aws_s3_bucket.api_gateway_bucket]
+  bucket = aws_s3_bucket.api_gateway_bucket.id
+
+  block_public_acls   = false
+  block_public_policy = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+# Define policy for detected images s3 bucket for public read access
+resource "aws_s3_bucket_policy" "allow_api_access_from_another_account" {
+  depends_on = [ aws_s3_bucket_public_access_block.api_gateway_bucket_access ]
+  bucket = aws_s3_bucket.api_gateway_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject",
+        Effect    = "Allow",
+        Principal = "*",
+        Action    = ["s3:*", "s3:GetObject","s3:ListBucket"],
+        Resource  = ["arn:aws:s3:::${local.api_gateway_bucket}",
+                     "arn:aws:s3:::${local.api_gateway_bucket}/*",
+                    ]
+      },
+    ],
+  })
 }
 
 # Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
@@ -325,6 +356,8 @@ resource "aws_iam_policy" "lambda_s3_policy" {
           "arn:aws:s3:::${local.image_api_bucket}/*",
           "arn:aws:s3:::${local.detected_images_bucket}",
           "arn:aws:s3:::${local.detected_images_bucket}/*",
+          "arn:aws:s3:::${local.api_gateway_bucket}",
+          "arn:aws:s3:::${local.api_gateway_bucket}/*",
         ]
       },
       {
@@ -584,5 +617,3 @@ resource "aws_amplify_branch" "amplify_branch" {
   app_id      = "${aws_amplify_app.giraffe_alert_app.id}"
   branch_name = "main"
 }
-
-
