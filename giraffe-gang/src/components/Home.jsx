@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import LiveFeedImage from "./LiveFeedImage.jsx";
-import {API_URL} from "../data/output.js";
+import { API_URL } from "../data/output.js";
 import "../styles/Home.css";
 
 function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const subscription_url = API_URL; //replace with instance url
+  const subscription_url = API_URL + "/subscriber"; //replace with instance url
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -48,7 +48,6 @@ function Home() {
       <h1 className="home-heading">Giraffe Gang Live Feed Viewer</h1>
 
       <LiveFeedImage />
-
       <div className="subscription-box">
         <p className="subscription-message">
           Don't see any Giraffes? Subscribe to get alerted when they're back!
@@ -78,4 +77,3 @@ function Home() {
 }
 
 export default Home;
-
