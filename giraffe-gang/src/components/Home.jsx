@@ -7,7 +7,7 @@ function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const subscription_url = process.env.REACT_APP_ENV_API_URL+"/subscriber"; //replace with instance url
-  console.log(subscription_url)
+  
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };

@@ -11,7 +11,7 @@ locals {
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
-  github_access_token        = "gh-access-token" # Change this to your desired github access token
+  github_access_token        = "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" # Change this to your desired github access token
   db_schema_sql              = "giraffe_db_schema.sql" 
   db_preload_data_sql        = "giraffe_db_preload_data.sql"
   db_name                    = "giraffe_db" 
@@ -161,6 +161,26 @@ resource "aws_lambda_function" "add_subscriber_to_giraffe_alert" {
   }
 }
 
+#### Get Hourly Report lamba function ####
+
+resource "aws_lambda_function" "get_hourly_report_lambda" {
+  filename         = "get_hourly_report_lambda_payload.zip"
+  function_name    = "get_hourly_report_lambda"
+  role             = aws_iam_role.iam_for_lambda.arn
+  handler          = "get_hourly_report_lambda_function.lambda_handler"
+  runtime          = "python3.8"
+  source_code_hash = data.archive_file.get_hourly_report_lambda_code.output_base64sha256
+  layers = [aws_lambda_layer_version.python38-pymysql-layer.arn]
+
+  environment {
+    variables = {
+      DB_HOST          = "${aws_db_instance.main_db_instance.endpoint}"
+      DB_USER          = "${local.db_username}"
+      DB_PASSWORD      = "${local.db_password}"
+      DB_NAME          = "${local.db_name}"
+    }
+  }
+}
 
 #### Image API Lambda Function ####
 
@@ -277,6 +297,14 @@ data "archive_file" "add_subscriber_lambda_code" {
   type        = "zip"
   source_file = "add_subscriber_lambda_function.py"
   output_path = "add_subscriber_to_giraffe_alert_payload.zip"
+}
+
+# Define an archive of the API get for hourly report Lambda function code (ZIP file)
+
+data "archive_file" "get_hourly_report_lambda_code" {
+  type        = "zip"
+  source_file = "get_hourly_report_lambda_function.py"
+  output_path = "get_hourly_report_lambda_payload.zip"
 }
 
 
@@ -447,29 +475,50 @@ resource "aws_lambda_permission" "test" {
   source_arn = "arn:aws:s3:::${aws_s3_bucket.image_api_bucket.id}"
 }
 
+#### S3 Event Rule to Trigger Subscriber Lambda ####
 
-#### API Gateway for SNS topic lambda function ####
+# Define permission for S3 to invoke the Subscriber Lambda function
+resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
+  statement_id  = "AllowSubscriberAPIInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.add_subscriber_to_giraffe_alert.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.giraffe_rest_api.execution_arn}/*/*"
+}
 
-resource "aws_api_gateway_rest_api" "subscriber_management_api" {
-  name        = "GiraffeSubscriberManagementAPI"
-  description = "API for managing Giraffe Alert subscribers"
+#### S3 Event Rule to Trigger Frontend Hourly Report Lambda ####
+
+# Define permission for S3 to invoke the Frontend Hourly Report Lambda function
+resource "aws_lambda_permission" "allow_hourly_report_api_to_invoke_lambda" {
+  statement_id  = "AllowSubscriberAPIInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.get_hourly_report_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.giraffe_rest_api.execution_arn}/*/*"
+}
+
+#### API Gateway ####
+
+resource "aws_api_gateway_rest_api" "giraffe_rest_api" {
+  name        = "GiraffeAPI"
+  description = "API for managing Giraffe App"
 }
 
 resource "aws_api_gateway_resource" "subscriber_endpoint" {
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
-  parent_id   = aws_api_gateway_rest_api.subscriber_management_api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  parent_id   = aws_api_gateway_rest_api.giraffe_rest_api.root_resource_id
   path_part   = "subscriber"
 }
 
 resource "aws_api_gateway_method" "subscriber_post_method" {
-  rest_api_id   = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_post_method.http_method
 
@@ -478,28 +527,46 @@ resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
   uri                     = aws_lambda_function.add_subscriber_to_giraffe_alert.invoke_arn
 }
 
-resource "aws_api_gateway_deployment" "subscriber_api_deployment" {
-  depends_on = [
-    aws_api_gateway_integration.subscriber_lambda_integration,
-  ]
+## Hourly Report ##
 
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
-  stage_name  = "dev"
+resource "aws_api_gateway_resource" "hourly_report_endpoint" {
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  parent_id   = aws_api_gateway_rest_api.giraffe_rest_api.root_resource_id
+  path_part   = "hourly_report"
 }
 
-resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
-  statement_id  = "AllowSubscriberAPIInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.add_subscriber_to_giraffe_alert.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.subscriber_management_api.execution_arn}/*/*"
+resource "aws_api_gateway_method" "hourly_report_post_method" {
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
+  resource_id   = aws_api_gateway_resource.hourly_report_endpoint.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "hourly_report_lambda_integration" {
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  resource_id = aws_api_gateway_resource.hourly_report_endpoint.id
+  http_method = aws_api_gateway_method.hourly_report_post_method.http_method
+
+  integration_http_method = "GET"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn
+}
+
+resource "aws_api_gateway_deployment" "api_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.subscriber_lambda_integration,
+    aws_api_gateway_integration.hourly_report_lambda_integration
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  stage_name  = "dev"
 }
 
 #### CORS ####
 
 # Add OPTIONS method to handle CORS preflight requests
 resource "aws_api_gateway_method" "subscriber_options_method" {
-  rest_api_id   = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
   http_method   = "OPTIONS"
   authorization = "NONE"
@@ -507,7 +574,7 @@ resource "aws_api_gateway_method" "subscriber_options_method" {
 
 # Add a Mock Integration to return the CORS headers
 resource "aws_api_gateway_integration" "subscriber_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
 
@@ -519,7 +586,7 @@ resource "aws_api_gateway_integration" "subscriber_options_integration" {
 
 # Define the response for OPTIONS method
 resource "aws_api_gateway_method_response" "cors_response" {
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
   status_code = "200"
@@ -541,7 +608,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
     aws_api_gateway_integration.subscriber_options_integration
   ]
 
-  rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
   status_code = aws_api_gateway_method_response.cors_response.status_code
@@ -564,36 +631,11 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
 
 # Define the Amplify resources for the frontend
 resource "aws_amplify_app" "giraffe_alert_app" {
-  depends_on = [ aws_api_gateway_deployment.subscriber_api_deployment ]
+  depends_on = [ aws_api_gateway_deployment.api_deployment ]
   name          = "giraffe_alert_app"
   repository    = "${local.amplify_repo}"
   access_token = "${local.github_access_token}"
   enable_auto_branch_creation = true
-
-  build_spec = <<-EOT
-    version: 1
-    frontend:
-      phases:
-        # IMPORTANT - Please verify your build commands
-        preBuild: 
-          commands:
-            - cd giraffe-gang
-            - npm ci
-        build:
-          commands:
-            - REACT_APP_ENV_API_URL=${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}
-            - npm run build
-            - ls -la
-      artifacts:
-        # IMPORTANT - Please verify your build output directory
-        baseDirectory: giraffe-gang/build
-        files:
-          - '**/*'
-      cache:
-        paths: 
-          - node_modules/**/*
-
-  EOT
 
   # The default patterns added by the Amplify Console.
   auto_branch_creation_patterns = [
@@ -607,7 +649,7 @@ resource "aws_amplify_app" "giraffe_alert_app" {
   }
 
   environment_variables = {
-    REACT_APP_ENV_API_URL = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
+    REACT_APP_ENV_API_URL = "${aws_api_gateway_deployment.api_deployment.invoke_url}"  
   }
 }
 

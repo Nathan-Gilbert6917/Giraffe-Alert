@@ -10,6 +10,7 @@ frontend:
       commands:
         - REACT_APP_ENV_API_URL=${REACT_APP_ENV_API_URL}
         - echo "REACT_APP_ENV_API_URL=$REACT_APP_ENV_API_URL" >> .env
+        - REACT_APP_ENV_DEMO=true
         - npm run build
         - ls -la
   artifacts:
