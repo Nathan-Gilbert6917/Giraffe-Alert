@@ -16,6 +16,7 @@ function Reports() {
   
       fetch(hourly_report_url, {
           method: "GET",
+          cors: true,
           headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
