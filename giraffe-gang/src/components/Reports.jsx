@@ -14,8 +14,8 @@ function Reports() {
     console.log(reportData)
     const handleHourlyReport = () => {
       fetch(hourly_report_url, {
-          method: 'GET',
-          mode: 'no-cors',
+          method: "GET",
+          mode: "no-cors",
           headers: {
             "Content-Type": "application/json",
           }
