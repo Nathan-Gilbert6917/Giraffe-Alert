@@ -26,10 +26,11 @@ function Reports() {
         console.error("Error fetching data:", error);
       }
     };
+    handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
     const interval = setInterval(handleHourlyReport, time);
     return () => clearInterval(interval)
-  })
+  }, []);
   
   return (
     <div className="reports-container">
