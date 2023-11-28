@@ -18,8 +18,7 @@ function Reports() {
           mode: 'no-cors',
           headers: {
             "Content-Type": "application/json",
-          },
-          body: ""
+          }
         })
         .then((response) => {
           console.log("Response: " +response);
