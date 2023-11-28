@@ -20,7 +20,9 @@ function Reports() {
             "Content-Type": "application/json",
           }
         })
-      const results = await response.json();
+      console.log(response);
+      const results = response;
+      
       setReportData(results);
       return results;
     };
