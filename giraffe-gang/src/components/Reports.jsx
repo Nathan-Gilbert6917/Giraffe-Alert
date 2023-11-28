@@ -20,12 +20,13 @@ function Reports() {
           }
         })
         .then((response) => {
+          console.log("Response: " +response);
           if (response.ok) {
-            const data = response.json();
+            const data = response;
             console.log(data);
             setReportData(data);
           } else {
-            const data = response.json();
+            const data = response;
             console.log(data);
             setReportData(data);
             console.error("Failed to subscribe:", response.statusText);
