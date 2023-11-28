@@ -11,7 +11,7 @@ locals {
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
-  github_access_token        = "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" # Change this to your desired github access token
+  github_access_token        = "" # Change this to your desired github access token
   db_schema_sql              = "giraffe_db_schema.sql" 
   db_preload_data_sql        = "giraffe_db_preload_data.sql"
   db_name                    = "giraffe_db" 
