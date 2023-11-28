@@ -8,7 +8,7 @@ frontend:
         - npm ci
     build:
       commands:
-        - REACT_APP_ENV_API_URL=${SUB_URL}
+        - REACT_APP_ENV_API_URL=$SUB_URL
         - npm run build
         - ls -la
   artifacts:
