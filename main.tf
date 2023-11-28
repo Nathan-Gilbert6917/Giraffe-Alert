@@ -11,7 +11,7 @@ locals {
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
-  github_access_token        = "" # Change this to your desired github access token
+  github_access_token        = "gh-access-token" # Change this to your desired github access token
   db_schema_sql              = "giraffe_db_schema.sql" 
   db_preload_data_sql        = "giraffe_db_preload_data.sql"
   db_name                    = "giraffe_db" 
@@ -570,6 +570,31 @@ resource "aws_amplify_app" "giraffe_alert_app" {
   access_token = "${local.github_access_token}"
   enable_auto_branch_creation = true
 
+  build_spec = <<-EOT
+    version: 1
+    frontend:
+      phases:
+        # IMPORTANT - Please verify your build commands
+        preBuild: 
+          commands:
+            - cd giraffe-gang
+            - npm ci
+        build:
+          commands:
+            - REACT_APP_ENV_API_URL=${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}
+            - npm run build
+            - ls -la
+      artifacts:
+        # IMPORTANT - Please verify your build output directory
+        baseDirectory: giraffe-gang/build
+        files:
+          - '**/*'
+      cache:
+        paths: 
+          - node_modules/**/*
+
+  EOT
+
   # The default patterns added by the Amplify Console.
   auto_branch_creation_patterns = [
     "*",
@@ -582,7 +607,7 @@ resource "aws_amplify_app" "giraffe_alert_app" {
   }
 
   environment_variables = {
-    SUB_URL = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
+    REACT_APP_ENV_API_URL = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
   }
 }
 
