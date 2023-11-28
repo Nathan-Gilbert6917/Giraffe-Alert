@@ -31,10 +31,9 @@ function Reports() {
           }
         })
         .catch((error) => {
-          const data = error.json();
-          console.log(data);
-          setReportData(data);
-          console.error("Error:", data);
+          console.log(error);
+          setReportData(error);
+          console.error("Error:", error);
         });
     };
     handleHourlyReport()
