@@ -7,17 +7,19 @@ function Reports() {
   const isDemo = process.env.REACT_APP_ENV_DEMO;
   const [reportData, setReportData] = useState(null);
 
-  console.log(isDemo)
-  console.log(hourly_report_url)
-  console.log(reportData)
+  
   useEffect(() => {
-    const handleHourlyReport = async () => {
-      const response = await fetch(hourly_report_url, {
+    console.log(isDemo)
+    console.log(hourly_report_url)
+    console.log(reportData)
+    const handleHourlyReport = () => {
+      fetch(hourly_report_url, {
           method: 'GET',
           mode: 'no-cors',
           headers: {
             "Content-Type": "application/json",
-          }
+          },
+          body: ""
         })
         .then((response) => {
           console.log("Response: " +response);
@@ -37,8 +39,6 @@ function Reports() {
           setReportData(error);
           console.error("Error:", error);
         });
-      console.log(response);
-      setReportData(response);
     };
     handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
