@@ -12,19 +12,30 @@ function Reports() {
   console.log(reportData)
   useEffect(() => {
     const handleHourlyReport = async () => {
-      try {
-        const response = await fetch(hourly_report_url, {
+      await fetch(hourly_report_url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           }
+        })
+        .then((response) => {
+          if (response.ok) {
+            const data = response.json();
+            console.log(data);
+            setReportData(data);
+          } else {
+            const data = response.json();
+            console.log(data);
+            setReportData(data);
+            console.error("Failed to subscribe:", response.statusText);
+          }
+        })
+        .catch((error) => {
+          const data = error.json();
+          console.log(data);
+          setReportData(data);
+          console.error("Error:", data);
         });
-        const data = await response.json();
-        console.log(data);
-        setReportData(data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
     };
     handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
