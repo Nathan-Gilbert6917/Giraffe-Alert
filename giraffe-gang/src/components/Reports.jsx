@@ -16,7 +16,6 @@ function Reports() {
   
       fetch(hourly_report_url, {
           method: "GET",
-          mode: "no-cors",
           headers: {
             "Content-Type": "application/json",
           }
