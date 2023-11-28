@@ -12,19 +12,16 @@ function Reports() {
     console.log(isDemo)
     console.log(hourly_report_url)
     console.log(reportData)
-    const handleHourlyReport = async () => {
-      let response = await fetch(hourly_report_url, {
+    const handleHourlyReport = () => {
+      console.log(
+        fetch(hourly_report_url, {
           method: "GET",
           mode: "no-cors",
           headers: {
             "Content-Type": "application/json",
           }
         })
-      console.log(response);
-      const results = response;
-      
-      setReportData(results);
-      return results;
+      )
     };
     handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
