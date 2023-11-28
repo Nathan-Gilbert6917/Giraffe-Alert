@@ -651,7 +651,45 @@ resource "aws_api_gateway_integration" "hourly_report_integration" {
   uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn 
 }
 
+# Define the response for OPTIONS method
+resource "aws_api_gateway_method_response" "hourly_cors_response" {
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
+  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
+  status_code = "200"
 
+  response_models = {
+    "application/json" = "Empty"
+  }
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+# Define the integration response to include CORS headers
+resource "aws_api_gateway_integration_response" "hourly_cors_integration_response" {
+  depends_on = [
+    aws_api_gateway_integration.hourly_report_integration
+  ]
+
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
+  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
+  status_code = aws_api_gateway_method_response.hourly_cors_response.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+
+  response_templates = {
+    "application/json" = ""
+  }
+}
 
 ######## Frontend ########
 
