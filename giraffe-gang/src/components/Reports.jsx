@@ -13,15 +13,22 @@ function Reports() {
     console.log(hourly_report_url)
     console.log(reportData)
     const handleHourlyReport = () => {
-      console.log(
-        fetch(hourly_report_url, {
+  
+      fetch(hourly_report_url, {
           method: "GET",
           mode: "no-cors",
           headers: {
             "Content-Type": "application/json",
           }
         })
-      )
+        .then((response) => response.json())
+        .then((result) => {
+          console.log(result);
+          setReportData(result);
+        })
+        .catch((error) => {
+          console.error(error);
+        })
     };
     handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
