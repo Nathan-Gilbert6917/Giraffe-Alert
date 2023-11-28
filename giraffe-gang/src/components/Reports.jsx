@@ -49,7 +49,7 @@ function Reports() {
       <h1 className="reports-heading">Reports</h1>
       {/* Add reports content here */}
       {reportData ? (
-        <div>JSON.stringify(reportData)</div>
+        <div>{JSON.stringify(reportData)}</div>
       ) : (
         <p>Loading...</p>
       )}
