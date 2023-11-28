@@ -1,9 +1,15 @@
 ## How TO: Run Terraform Script
 
-# Update File
+# Testing Information
+- Put images of giraffe into the bucket defined under the image_api_bucket variable in the main.tf file. The default is giraffe_upload.
+- Load time: About 5 minutes TODO again after more changes happen
+- Destroy Time: About 5 minutes TODO again after more changes happen
+
+# Update main.tf File
 - At the top of the file inside of main.tf 
 - Update region to your desired region
 - Update image_api_bucket to your desired bucket
+- Update the database username and password if you want to. Otherwise it will be set by default.
 - Save this file
 
 # Getting Started
@@ -27,10 +33,11 @@ With our files on our EC2 and Terraform installed, we are now ready to run our s
 - Run `terraform init` to startup Terraform
 - Run `terraform plan` to make sure setup is accurate and everything is being created as it should
 - Run `terraform apply` to run our plan!
+
+# Checking everything is working
 After `terraform apply` completes, check 
-- Lambda function is created and running
-- CloudWatch rule is created and enabled
-- s3 bucket for images being uploaded every minute
+- Open up AWS and go to Amplify.
+- Build the frontend from there.
 
 # Teardown
 After testing, run `terraform destory` to teardown all the created infrastructure

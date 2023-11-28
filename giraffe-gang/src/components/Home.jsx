@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import LiveFeedImage from "./LiveFeedImage.jsx";
-import { API_URL } from "../data/output.js";
 import "../styles/Home.css";
 
 function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const subscription_url = API_URL + "/subscriber"; //replace with instance url
+  const subscription_url = process.env.subscribe_api_url+"/subscriber"; //replace with instance url
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -16,8 +15,8 @@ function Home() {
   const handleSubscribe = () => {
     const requestBody = {
       email: email,
-    };
-
+    }; 
+    
     // Send request to the subscription_url
     fetch(subscription_url, {
       method: "POST",

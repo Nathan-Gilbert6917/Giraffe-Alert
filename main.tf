@@ -7,15 +7,14 @@ provider "aws" {
 locals {
   terraform_deploy_bucket    = "giraffe-terra-test" # Change this to the name of the bucket you are using to deploy terraform
   image_api_bucket           = "giraffe-upload" # Change this to your desired upload bucket
-  api_gateway_bucket         = "api-gateway-endpoint" # Change this to your desired bucket
   detected_images_bucket     = "detected-images"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
-  github_access_token        = "gh-access-token" # Change this to your github access token
-  db_schema_sql              = "giraffe_db_schema.sql" # Change this to your database schema sql file
-  db_preload_data_sql        = "giraffe_db_preload_data.sql" # Change this to your database preload sql file
-  db_name                    = "giraffe_db" # Change this to your database name
+  github_access_token        = "gh-access-token" # Change this to your desired github access token
+  db_schema_sql              = "giraffe_db_schema.sql" 
+  db_preload_data_sql        = "giraffe_db_preload_data.sql"
+  db_name                    = "giraffe_db" 
   db_username                = "giraffe_db_user" # Change this to your desired database username
   db_password                = "muchsecurity" # Change this to a better password
 }
@@ -43,43 +42,6 @@ resource "aws_s3_bucket" "image_api_bucket" {
 resource "aws_s3_bucket" "detected_images_bucket" {
   bucket        = local.detected_images_bucket
   force_destroy = true
-}
-
-# Define an S3 bucket for uploading the api gateway endpoint
-resource "aws_s3_bucket" "api_gateway_bucket" {
-  bucket        = local.api_gateway_bucket
-  force_destroy = true
-}
-
-# Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
-resource "aws_s3_bucket_public_access_block" "api_gateway_bucket_access" {
-  depends_on = [aws_s3_bucket.api_gateway_bucket]
-  bucket = aws_s3_bucket.api_gateway_bucket.id
-
-  block_public_acls   = false
-  block_public_policy = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-# Define policy for detected images s3 bucket for public read access
-resource "aws_s3_bucket_policy" "allow_api_access_from_another_account" {
-  depends_on = [ aws_s3_bucket_public_access_block.api_gateway_bucket_access ]
-  bucket = aws_s3_bucket.api_gateway_bucket.id
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject",
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = ["s3:*", "s3:GetObject","s3:ListBucket"],
-        Resource  = ["arn:aws:s3:::${local.api_gateway_bucket}",
-                     "arn:aws:s3:::${local.api_gateway_bucket}/*",
-                    ]
-      },
-    ],
-  })
 }
 
 # Define S3 public access block to prevent policy blocks allowing for public access to the S3 bucket
@@ -356,8 +318,6 @@ resource "aws_iam_policy" "lambda_s3_policy" {
           "arn:aws:s3:::${local.image_api_bucket}/*",
           "arn:aws:s3:::${local.detected_images_bucket}",
           "arn:aws:s3:::${local.detected_images_bucket}/*",
-          "arn:aws:s3:::${local.api_gateway_bucket}",
-          "arn:aws:s3:::${local.api_gateway_bucket}/*",
         ]
       },
       {
@@ -525,10 +485,6 @@ resource "aws_api_gateway_deployment" "subscriber_api_deployment" {
 
   rest_api_id = aws_api_gateway_rest_api.subscriber_management_api.id
   stage_name  = "dev"
-  
-  provisioner "local-exec" {
-    command = "sh api.sh ${self.invoke_url} ${local.api_gateway_bucket}"
-  }
 }
 
 resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
@@ -539,7 +495,7 @@ resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
   source_arn    = "${aws_api_gateway_rest_api.subscriber_management_api.execution_arn}/*/*"
 }
 
-### CORS
+#### CORS ####
 
 # Add OPTIONS method to handle CORS preflight requests
 resource "aws_api_gateway_method" "subscriber_options_method" {
@@ -608,9 +564,26 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
 
 # Define the Amplify resources for the frontend
 resource "aws_amplify_app" "giraffe_alert_app" {
+  depends_on = [ aws_api_gateway_deployment.subscriber_api_deployment ]
   name          = "giraffe_alert_app"
-  repository    = "${local.amplify_repo}" # TODO: Change to repo
+  repository    = "${local.amplify_repo}"
   access_token = "${local.github_access_token}"
+  enable_auto_branch_creation = true
+
+  # The default patterns added by the Amplify Console.
+  auto_branch_creation_patterns = [
+    "*",
+    "*/**",
+  ]
+
+  auto_branch_creation_config {
+    # Enable auto build for the created branch.
+    enable_auto_build = true
+  }
+
+  environment_variables = {
+    EBV = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
+  }
 }
 
 resource "aws_amplify_branch" "amplify_branch" {
