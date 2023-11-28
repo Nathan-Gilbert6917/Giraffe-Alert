@@ -22,7 +22,7 @@ function Reports() {
         const data = await response.json();
         console.log(data);
         setReportData(data);
-      } catch (err) {
+      } catch (error) {
         console.error("Error fetching data:", error);
       }
     };
