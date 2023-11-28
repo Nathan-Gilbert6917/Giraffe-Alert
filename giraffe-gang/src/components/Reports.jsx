@@ -12,8 +12,9 @@ function Reports() {
   console.log(reportData)
   useEffect(() => {
     const handleHourlyReport = async () => {
-      await fetch(hourly_report_url, {
-          method: "GET",
+      const response = await fetch(hourly_report_url, {
+          method: 'GET',
+          mode: 'no-cors',
           headers: {
             "Content-Type": "application/json",
           }
@@ -35,6 +36,8 @@ function Reports() {
           setReportData(error);
           console.error("Error:", error);
         });
+      console.log(response);
+      setReportData(response);
     };
     handleHourlyReport()
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes

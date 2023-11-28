@@ -7,8 +7,8 @@ provider "aws" {
 locals {
   is_demo                    = "true"
   terraform_deploy_bucket    = "giraffe-terra-test" # Change this to the name of the bucket you are using to deploy terraform
-  image_api_bucket           = "giraffe-upload" # Change this to your desired upload bucket
-  detected_images_bucket     = "detected-images"
+  image_api_bucket           = "giraffe-uploads" # Change this to your desired upload bucket
+  detected_images_bucket     = "giraffe-detected-images"
   rekognition_max_labels     = 15
   rekognition_min_confidence = 90
   amplify_repo               = "https://github.com:SWEN-514-614-2231/term-project-team05"
@@ -484,7 +484,7 @@ resource "aws_lambda_permission" "allow_subscriber_api_to_invoke_lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.add_subscriber_to_giraffe_alert.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.giraffe_rest_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.giraffe_api.execution_arn}/*/*"
 }
 
 #### S3 Event Rule to Trigger Frontend Hourly Report Lambda ####
@@ -495,31 +495,31 @@ resource "aws_lambda_permission" "allow_hourly_report_api_to_invoke_lambda" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.get_hourly_report_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.giraffe_rest_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.giraffe_api.execution_arn}/*/*"
 }
 
 #### API Gateway ####
 
-resource "aws_api_gateway_rest_api" "giraffe_rest_api" {
+resource "aws_api_gateway_rest_api" "giraffe_api" {
   name        = "GiraffeAPI"
   description = "API for managing Giraffe App"
 }
 
 resource "aws_api_gateway_resource" "subscriber_endpoint" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
-  parent_id   = aws_api_gateway_rest_api.giraffe_rest_api.root_resource_id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  parent_id   = aws_api_gateway_rest_api.giraffe_api.root_resource_id
   path_part   = "subscriber"
 }
 
 resource "aws_api_gateway_method" "subscriber_post_method" {
-  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
   resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_post_method.http_method
 
@@ -531,24 +531,30 @@ resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
 ## Hourly Report ##
 
 resource "aws_api_gateway_resource" "hourly_report_endpoint" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
-  parent_id   = aws_api_gateway_rest_api.giraffe_rest_api.root_resource_id
+  depends_on = [ aws_api_gateway_rest_api.giraffe_api ]
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  parent_id   = aws_api_gateway_rest_api.giraffe_api.root_resource_id
   path_part   = "hourly_report"
 }
 
-resource "aws_api_gateway_method" "hourly_report_post_method" {
-  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
+resource "aws_api_gateway_method" "get_hourly_report_method" {
+  depends_on = [ aws_api_gateway_resource.hourly_report_endpoint ]
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
   resource_id   = aws_api_gateway_resource.hourly_report_endpoint.id
-  http_method   = "GET"
+  http_method   = "ANY"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "hourly_report_lambda_integration" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
-  resource_id = aws_api_gateway_resource.hourly_report_endpoint.id
-  http_method = aws_api_gateway_method.hourly_report_post_method.http_method
+resource "aws_api_gateway_integration" "get_hourly_report_lambda_integration" {
+  depends_on = [ 
+    aws_api_gateway_rest_api.giraffe_api, 
+    aws_api_gateway_method.get_hourly_report_method
+  ]
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
+  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
 
-  integration_http_method = "GET"
+  integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn
 }
@@ -556,10 +562,11 @@ resource "aws_api_gateway_integration" "hourly_report_lambda_integration" {
 resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on = [
     aws_api_gateway_integration.subscriber_lambda_integration,
-    aws_api_gateway_integration.hourly_report_lambda_integration
+    aws_api_gateway_integration.get_hourly_report_lambda_integration,
+    aws_api_gateway_integration.hourly_report_integration
   ]
 
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
   stage_name  = "dev"
 }
 
@@ -567,7 +574,7 @@ resource "aws_api_gateway_deployment" "api_deployment" {
 
 # Add OPTIONS method to handle CORS preflight requests
 resource "aws_api_gateway_method" "subscriber_options_method" {
-  rest_api_id   = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
   resource_id   = aws_api_gateway_resource.subscriber_endpoint.id
   http_method   = "OPTIONS"
   authorization = "NONE"
@@ -575,7 +582,7 @@ resource "aws_api_gateway_method" "subscriber_options_method" {
 
 # Add a Mock Integration to return the CORS headers
 resource "aws_api_gateway_integration" "subscriber_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
 
@@ -587,7 +594,7 @@ resource "aws_api_gateway_integration" "subscriber_options_integration" {
 
 # Define the response for OPTIONS method
 resource "aws_api_gateway_method_response" "cors_response" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
   status_code = "200"
@@ -609,7 +616,7 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
     aws_api_gateway_integration.subscriber_options_integration
   ]
 
-  rest_api_id = aws_api_gateway_rest_api.giraffe_rest_api.id
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
   status_code = aws_api_gateway_method_response.cors_response.status_code
@@ -624,6 +631,26 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
     "application/json" = ""
   }
 }
+
+# Add OPTIONS method to handle CORS preflight requests
+resource "aws_api_gateway_method" "hourly_report_method" {
+  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
+  resource_id   = aws_api_gateway_rest_api.giraffe_api.root_resource_id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+# Add a Mock Integration to return the CORS headers
+resource "aws_api_gateway_integration" "hourly_report_integration" {
+  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
+  resource_id = aws_api_gateway_method.hourly_report_method.resource_id
+  http_method = aws_api_gateway_method.hourly_report_method.http_method
+
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn 
+}
+
 
 
 ######## Frontend ########

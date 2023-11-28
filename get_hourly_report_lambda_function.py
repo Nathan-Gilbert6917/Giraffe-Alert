@@ -84,18 +84,11 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': {
-                'alerts': alerts,
-                'execution':json.dumps('Lambda executed successfully.')
-            }
+            'body': json.dumps(alerts)
         }
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
-            'alerts': alerts,
-            'body': {
-                'alerts': alerts,
-                'execution': json.dumps('Lambda execution failed.')
-            }
+            'body': json.dumps(alerts)
         }
