@@ -582,7 +582,7 @@ resource "aws_amplify_app" "giraffe_alert_app" {
   }
 
   environment_variables = {
-    EBV = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
+    subscribe_api_url = "${aws_api_gateway_deployment.subscriber_api_deployment.invoke_url}"  
   }
 }
 
