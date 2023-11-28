@@ -20,14 +20,13 @@ function Reports() {
             "Content-Type": "application/json",
           }
         })
-        .then((response) => {
-          console.log("Response: " +response);
-          if (response.ok) {
-            const data = response;
+        .then((response) => response.json())
+        .then(data => {
+          console.log("Response: " +data);
+          if (data) {
             console.log(data);
             setReportData(data);
           } else {
-            const data = response;
             console.log(data);
             setReportData(data);
             console.error("Failed to subscribe:", response.statusText);
