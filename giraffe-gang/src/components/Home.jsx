@@ -47,12 +47,9 @@ function Home() {
 
   return (
     <div className="home-container">
-      <Navbar />
+      {/* <Navbar /> */}
 
-      <Typography>
-        <Title level={3} style={{marginBottom: '10px'}}>Giraffe Gang Presents</Title>
-        <Title style={{marginTop:0}}>Live Giraffe Feed Viewer</Title>
-      </Typography>
+      
       <LiveFeedImage />
       <div className="subscription-box">
         <Typography>

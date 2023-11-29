@@ -39,8 +39,6 @@ function Reports() {
   
   return (
     <div className="reports-container">
-      <Navbar />
-
       <h1 className="reports-heading">Reports</h1>
       {/* Add reports content here */}
       {reportData ? (
