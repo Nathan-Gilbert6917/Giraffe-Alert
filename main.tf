@@ -503,6 +503,10 @@ resource "aws_lambda_permission" "allow_hourly_report_api_to_invoke_lambda" {
 resource "aws_api_gateway_rest_api" "giraffe_api" {
   name        = "GiraffeAPI"
   description = "API for managing Giraffe App"
+  
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
 }
 
 resource "aws_api_gateway_resource" "subscriber_endpoint" {
@@ -526,48 +530,6 @@ resource "aws_api_gateway_integration" "subscriber_lambda_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.add_subscriber_to_giraffe_alert.invoke_arn
-}
-
-## Hourly Report ##
-
-resource "aws_api_gateway_resource" "hourly_report_endpoint" {
-  depends_on = [ aws_api_gateway_rest_api.giraffe_api ]
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  parent_id   = aws_api_gateway_rest_api.giraffe_api.root_resource_id
-  path_part   = "hourly_report"
-}
-
-resource "aws_api_gateway_method" "get_hourly_report_method" {
-  depends_on = [ aws_api_gateway_resource.hourly_report_endpoint ]
-  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id   = aws_api_gateway_resource.hourly_report_endpoint.id
-  http_method   = "ANY"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "get_hourly_report_lambda_integration" {
-  depends_on = [ 
-    aws_api_gateway_rest_api.giraffe_api, 
-    aws_api_gateway_method.get_hourly_report_method
-  ]
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
-  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
-
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn
-}
-
-resource "aws_api_gateway_deployment" "api_deployment" {
-  depends_on = [
-    aws_api_gateway_integration.subscriber_lambda_integration,
-    aws_api_gateway_integration.get_hourly_report_lambda_integration,
-    aws_api_gateway_integration.hourly_report_integration
-  ]
-
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  stage_name  = "dev"
 }
 
 #### CORS ####
@@ -620,65 +582,6 @@ resource "aws_api_gateway_integration_response" "cors_integration_response" {
   resource_id = aws_api_gateway_resource.subscriber_endpoint.id
   http_method = aws_api_gateway_method.subscriber_options_method.http_method
   status_code = aws_api_gateway_method_response.cors_response.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-
-  response_templates = {
-    "application/json" = ""
-  }
-}
-
-# Add OPTIONS method to handle CORS preflight requests
-resource "aws_api_gateway_method" "hourly_report_method" {
-  rest_api_id   = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id   = aws_api_gateway_rest_api.giraffe_api.root_resource_id
-  http_method   = "ANY"
-  authorization = "NONE"
-}
-
-# Add a Mock Integration to return the CORS headers
-resource "aws_api_gateway_integration" "hourly_report_integration" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id = aws_api_gateway_method.hourly_report_method.resource_id
-  http_method = aws_api_gateway_method.hourly_report_method.http_method
-
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.get_hourly_report_lambda.invoke_arn 
-}
-
-# Define the response for OPTIONS method
-resource "aws_api_gateway_method_response" "hourly_cors_response" {
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
-  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
-  status_code = "200"
-
-  response_models = {
-    "application/json" = "Empty"
-  }
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-# Define the integration response to include CORS headers
-resource "aws_api_gateway_integration_response" "hourly_cors_integration_response" {
-  depends_on = [
-    aws_api_gateway_integration.hourly_report_integration
-  ]
-
-  rest_api_id = aws_api_gateway_rest_api.giraffe_api.id
-  resource_id = aws_api_gateway_method.get_hourly_report_method.resource_id
-  http_method = aws_api_gateway_method.get_hourly_report_method.http_method
-  status_code = aws_api_gateway_method_response.hourly_cors_response.status_code
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
