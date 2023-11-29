@@ -18,7 +18,7 @@ function Reports() {
   useEffect(() => {
     console.log(isDemo)
     console.log(hourly_report_url)
-    console.log(reportData.body)
+    console.log(reportData)
     const handleHourlyReport = () => {
   
       fetch(hourly_report_url, {
