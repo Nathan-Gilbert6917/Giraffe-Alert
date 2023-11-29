@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import LiveFeedImage from "./LiveFeedImage.jsx";
 import "../styles/Home.css";
+import { Typography, Input, Button, Space, Alert } from 'antd';
+
+
+
+const { Title, Paragraph } = Typography;
 
 function Home() {
   const [email, setEmail] = useState("");
@@ -44,32 +49,31 @@ function Home() {
     <div className="home-container">
       <Navbar />
 
-      <h1 className="home-heading">Giraffe Gang Live Feed Viewer</h1>
-
+      <Typography>
+        <Title level={3} style={{marginBottom: '10px'}}>Giraffe Gang Presents</Title>
+        <Title style={{marginTop:0}}>Live Giraffe Feed Viewer</Title>
+      </Typography>
       <LiveFeedImage />
       <div className="subscription-box">
-        <p className="subscription-message">
-          Don't see any Giraffes? Subscribe to get alerted when they're back!
-        </p>
-        {!subscribed ? (
-          <div className="subscription-form">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={handleEmailChange}
-            />
-            <button onClick={handleSubscribe}>Subscribe</button>
-          </div>
-        ) : (
-          <div className="thank-you-message">
-            <p>
-              Thank you for subscribing! Please check your email to confirm
-              subscription and you will be alerted via email when Giraffes are
-              back.
-            </p>
-          </div>
-        )}
+        <Typography>
+          <Paragraph strong="true" className="subscription-message">
+            Don't see any Giraffes? Subscribe to get alerted when they're back!
+          </Paragraph>
+          {!subscribed ? (
+            <div className="subscription-form">
+              <Space.Compact>
+                <Input placeholder="Enter your email" value={email} onChange={handleEmailChange}/>
+                <Button className="btn" onClick={handleSubscribe}>Subscribe</Button>
+              </Space.Compact>
+            </div>
+          ) : (
+            <div className="thank-you-message">
+              <Alert message="Thank you for subscribing! Please check your email to confirm
+                subscription and you will be alerted via email when Giraffes are
+                back." type="success"/>
+            </div>
+          )}
+        </Typography>
       </div>
     </div>
   );
