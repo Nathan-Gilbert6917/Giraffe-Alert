@@ -43,7 +43,7 @@ function Reports() {
     return () => clearInterval(interval)
   }, []);
   
-  const data = reportData["body"]
+  const data = reportData[1]
 
   return (
     <div className="reports-container">
