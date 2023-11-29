@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 // import "../styles/Navbar.css";
-import { Typography, Input, Button, Space, Alert, Layout } from 'antd';
+import { Typography, Input, Button, Space, Alert, Layout, Row, Col } from 'antd';
 
 const { Title } = Typography;
 
@@ -17,12 +17,11 @@ const headerStyle = {
 };
 
 const contentStyle = {
-  textAlign: 'right',
   minHeight: 80,
   lineHeight: '100px',
   color: '#fff',
   backgroundColor: "#F5CCA0",
-  paddingRight: "3%",
+  maxHeight: 200
 };
 
 const siderStyle = {
@@ -34,32 +33,33 @@ const siderStyle = {
 
 function Navbar() {
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size={[0, 48]}>
-      <Layout hasSider>
-        <Sider style={siderStyle}>
-          <img src= "images/giraffe.png" alt="lil cartoon giraffe" style={{width: "100%", height:"100%", margin: "auto", paddingRight: "60%", left: "30%", position: "absolute", textAlign: 'center'}}/>
-        </Sider>
-        <Content style={contentStyle}>
+        <Row justify="center"style={contentStyle}>
+          <Col span={8} style={{textAlign:"right"}}><img src="images/giraffe.png" alt="lil cartoon giraffe" style={{maxHeight: "200px", }}/></Col>
           
-          {/* <Typography>
-            <Title level={3} style={{paddingleft: "10%", marginBottom: '10px', textAlign: 'left',}}>Giraffe Gang Presents: Live Giraffe Feed Viewer</Title>
-          </Typography> */}
-          <Button>
-            <Link to="/" className="navbar-link">
-              Home
-            </Link>
-          </Button>
-          <Button>
-            <Link to="/reports" className="navbar-link">
-              Reports
-            </Link>
-          </Button>
-        </Content>
-      </Layout>
-    </Space>
-    // <nav className="navbar">
-      
-    // </nav>
+          <Col span={8} style={{textAlign:"center"}}>
+            <Row justify="center">
+              <Typography style={{marginBottom:"0px"}}>
+                <Title style={{color: "#361901"}}>Giraffe Gang Presents: Life Giraffe Feed Viewer</Title>
+              </Typography>
+            </Row>
+
+            <Row  marginTop="5px" align="top">
+              <Col span={12} style={{textAlign:"right"}}>
+                <Button type="text" size="large" style={{marginTop:"0px"}}>
+                  Home
+                </Button>
+              </Col> 
+              <Col span={12} style={{textAlign:"left"}}>
+                <Button type="text" size="large">
+                  Reports
+                </Button>
+              </Col>
+            </Row>
+
+          </Col>
+          
+          <Col span={8} style={{textAlign:"left"}}><img src="images/giraffe.png" alt="lil cartoon giraffe" style={{maxHeight: "200px", transform: "scaleX(-1)"}}/></Col>
+        </Row>
   );
 }
 
