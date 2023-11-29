@@ -1,20 +1,9 @@
 import React from "react";
-import { Link } from "react-router-dom";
-// import "../styles/Navbar.css";
-import { Typography, Input, Button, Space, Alert, Layout, Row, Col } from 'antd';
+import { useNavigate } from "react-router-dom";
+import "../styles/Navbar.css";
+import { Typography, Row, Col } from 'antd';
 
 const { Title } = Typography;
-
-const { Header, Footer, Sider, Content } = Layout;
-
-const headerStyle = {
-  textAlign: 'center',
-  color: '#fff',
-  height: 64,
-  paddingInline: 50,
-  lineHeight: '64px',
-  backgroundColor: "dimgray",
-};
 
 const contentStyle = {
   minHeight: 80,
@@ -24,14 +13,8 @@ const contentStyle = {
   maxHeight: 200
 };
 
-const siderStyle = {
-  textAlign: 'center',
-  lineHeight: '100px',
-  color: '#fff',
-  backgroundColor: '#DF826C',
-};
-
 function Navbar() {
+  const navigate = useNavigate();
   return (
         <Row justify="center"style={contentStyle}>
           <Col span={8} style={{textAlign:"right"}}><img src="images/giraffe.png" alt="lil cartoon giraffe" style={{maxHeight: "200px", }}/></Col>
@@ -43,16 +26,21 @@ function Navbar() {
               </Typography>
             </Row>
 
-            <Row  marginTop="5px" align="top">
-              <Col span={12} style={{textAlign:"right"}}>
-                <Button type="text" size="large" style={{marginTop:"0px"}}>
-                  Home
-                </Button>
+            <Row  marginTop="5px" justify="center">
+              <Col span={8} >
+                <Typography>
+                  <Title className='navbar-link' level={3} onClick={()=>navigate("/")}style={{color:"#361901", marginBlockStart:"0", textAlign:"right"}}>Home</Title>
+                </Typography>
               </Col> 
-              <Col span={12} style={{textAlign:"left"}}>
-                <Button type="text" size="large">
-                  Reports
-                </Button>
+              <Col span={8} >
+                <Typography>
+                  <Title level={3} style={{color:"#361901", marginBlockStart:"0"}}>|</Title>
+                </Typography>
+              </Col>
+              <Col span={8} >
+                <Typography>
+                  <Title className='navbar-link' level={3} onClick={()=>navigate("/reports")} style={{color:"#361901", marginBlockStart:"0", textAlign:"left"}}>Reports</Title>
+                </Typography>
               </Col>
             </Row>
 

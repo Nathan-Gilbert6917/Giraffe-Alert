@@ -18,14 +18,8 @@
   padding: 10px;
 }
 
-.navbar-link {
-  text-decoration: none;
-  color: white;
-  display: block;
-  padding: 10px;
-  transition: background-color 0.3s ease;
-}
-
 .navbar-link:hover {
-  background-color: grey;
+  transition: color 0.3s ease;
+  color: #945c2e !important;
+  cursor: pointer;
 }
