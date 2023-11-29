@@ -39,7 +39,7 @@ function Navbar() {
               </Col>
               <Col span={8} >
                 <Typography>
-                  <Title className='navbar-link' level={3} onClick={()=>navigate("/reports")} style={{color:"#361901", marginBlockStart:"0", textAlign:"left"}}>Reports</Title>
+                  <Title className='navbar-link'level={3} onClick={()=>navigate("/reports")} style={{color:"#361901", marginBlockStart:"0", textAlign:"left"}}>Reports</Title>
                 </Typography>
               </Col>
             </Row>

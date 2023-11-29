@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
-import Navbar from "./Navbar.jsx";
+import { Table, Tag } from 'antd';
 
 import "../styles/Reports.css";
+
 
 function Reports() {
   const hourly_report_url = process.env.REACT_APP_ENV_API_URL+"/hourly_report"; //replace with instance url
   const isDemo = process.env.REACT_APP_ENV_DEMO;
   const [reportData, setReportData] = useState(null);
 
+  const normalizeData = (data) =>
+    Object.keys(data).map((key) => ({
+      id: key,
+
+    }));
   
   useEffect(() => {
     console.log(isDemo)
@@ -37,12 +43,39 @@ function Reports() {
     return () => clearInterval(interval)
   }, []);
   
+  const data = reportData["body"]
+
   return (
     <div className="reports-container">
       <h1 className="reports-heading">Reports</h1>
       {/* Add reports content here */}
-      {reportData ? (
-        <div>{JSON.stringify(reportData)}</div>
+      {data ? (
+        <div>{JSON.stringify(data)}
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Giraffes</th>
+              <th>Confidence</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item,index)=>{
+              return(
+                <tr>
+                  <td>{item[0]}</td>
+                  <td>{item[1]}</td>
+                  <td>{item[2]}</td>
+                  <td>{item[3]}</td>
+                  <td>{item[4]}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        </div>
       ) : (
         <p>Loading...</p>
       )}
