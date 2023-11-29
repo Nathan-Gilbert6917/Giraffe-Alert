@@ -30,8 +30,8 @@ function Reports() {
         })
         .then((response) => response.json())
         .then((result) => {
-          console.log(result.body);
-          setReportData(result);
+          console.log(result);
+          setReportData(result.body);
         })
         .catch((error) => {
           console.error(error);
