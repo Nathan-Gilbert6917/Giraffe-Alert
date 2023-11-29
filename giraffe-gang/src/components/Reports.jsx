@@ -18,7 +18,7 @@ function Reports() {
   useEffect(() => {
     console.log(isDemo)
     console.log(hourly_report_url)
-    console.log(reportData)
+    console.log(reportData[1])
     const handleHourlyReport = () => {
   
       fetch(hourly_report_url, {
@@ -42,15 +42,13 @@ function Reports() {
     const interval = setInterval(handleHourlyReport, time);
     return () => clearInterval(interval)
   }, []);
-  
-  const data = reportData[1]
 
   return (
     <div className="reports-container">
       <h1 className="reports-heading">Reports</h1>
       {/* Add reports content here */}
-      {data ? (
-        <div>{JSON.stringify(data)}
+      {reportData ? (
+        <div>{JSON.stringify(reportData)}
         <table>
           <thead>
             <tr>
@@ -62,7 +60,7 @@ function Reports() {
             </tr>
           </thead>
           <tbody>
-            {data.map((item,index)=>{
+            {reportData.map((item,index)=>{
               return(
                 <tr>
                   <td>{item[0]}</td>
