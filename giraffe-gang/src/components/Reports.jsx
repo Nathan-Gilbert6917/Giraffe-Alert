@@ -14,6 +14,8 @@ function Reports() {
       id: key,
 
     }));
+
+    
   
   useEffect(() => {
     console.log(isDemo)
@@ -49,7 +51,6 @@ function Reports() {
       {/* Add reports content here */}
       {reportData ? (
         <div>
-          {/* {JSON.stringify(reportData)} */}
           <Flex gap="middle" vertical>
             <Flex gap="middle" horizontal>
               <div style={{backgroundColor: '#DED0B6', width: '25%', padding: "1%",}}><b>ID</b></div>
@@ -58,7 +59,7 @@ function Reports() {
               <div style={{backgroundColor: '#DED0B6', width: '25%', padding: "1%", }}><b>Confidence</b></div>
               <div style={{backgroundColor: '#DED0B6', width: '25%', padding: "1%",}}><b>Link</b></div>
             </Flex>
-            {JSON.parse(reportData.body).map((item,index)=>{
+            {JSON.parse(reportData).map((item,index)=>{
               return(
                 <Flex gap="middle" horizontal>
                   <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} >{item[0]}</div>

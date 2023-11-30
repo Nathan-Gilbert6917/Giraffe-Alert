@@ -2,17 +2,15 @@ import React, { useState } from "react";
 import Navbar from "./Navbar.jsx";
 import LiveFeedImage from "./LiveFeedImage.jsx";
 import "../styles/Home.css";
-import { Typography, Input, Button, Space, Alert } from 'antd';
-
-
+import { Typography, Input, Button, Space, Alert } from "antd";
 
 const { Title, Paragraph } = Typography;
 
 function Home() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
-  const subscription_url = process.env.REACT_APP_ENV_API_URL+"/subscriber"; //replace with instance url
-  
+  const subscription_url = process.env.REACT_APP_ENV_API_URL + "/subscriber"; //replace with instance url
+
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };
@@ -20,8 +18,8 @@ function Home() {
   const handleSubscribe = () => {
     const requestBody = {
       email: email,
-    }; 
-    
+    };
+
     // Send request to the subscription_url
     fetch(subscription_url, {
       method: "POST",
@@ -35,7 +33,6 @@ function Home() {
           setSubscribed(true);
         } else {
           setSubscribed(true); //KLDUGE FOR DEMO
-
           console.error("Failed to subscribe:", response.statusText);
         }
       })
@@ -47,9 +44,6 @@ function Home() {
 
   return (
     <div className="home-container">
-      {/* <Navbar /> */}
-
-      
       <LiveFeedImage />
       <div className="subscription-box">
         <Typography>
@@ -59,15 +53,25 @@ function Home() {
           {!subscribed ? (
             <div className="subscription-form">
               <Space.Compact>
-                <Input placeholder="Enter your email" value={email} onChange={handleEmailChange}/>
-                <Button className="btn" onClick={handleSubscribe}>Subscribe</Button>
+                <Input
+                  style={{ width: "15em" }}
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={handleEmailChange}
+                />
+                <Button className="btn" onClick={handleSubscribe}>
+                  Subscribe
+                </Button>
               </Space.Compact>
             </div>
           ) : (
             <div className="thank-you-message">
-              <Alert message="Thank you for subscribing! Please check your email to confirm
+              <Alert
+                message="Thank you for subscribing! Please check your email to confirm
                 subscription and you will be alerted via email when Giraffes are
-                back." type="success"/>
+                back."
+                type="success"
+              />
             </div>
           )}
         </Typography>

@@ -1,11 +1,10 @@
 .home-container {
   text-align: center;
   padding: 20px;
-  
 }
 
 body {
-  background-color:#EADBC8;
+  background-color: #eadbc8;
 }
 
 .home-heading {
@@ -36,7 +35,7 @@ body {
 
 .thank-you-message {
   margin-top: 5px;
-  padding: 5px;
+  padding: 0px 5px 0px 5px;
   border-radius: 5px;
   width: 40%;
   display: inline-block;
@@ -47,6 +46,6 @@ body {
   color: #6b3203;
 }
 .btn:hover {
-  background-color:#6b3203;
+  background-color: #6b3203;
   color: #ffc591 !important;
 }
