@@ -168,7 +168,7 @@ function Reports() {
                       padding: "1%",
                     }}
                   >
-                    {item[3]}%
+                    {Math.round(item[3] * 100) / 100}%
                   </div>
                   <div
                     key={index}
