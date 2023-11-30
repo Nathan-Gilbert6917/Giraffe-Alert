@@ -71,7 +71,7 @@ function Navbar() {
               <Title
                 className="navbar-link"
                 level={2}
-                onClick={() => navigate("/reports")}
+                onClick={() => navigate("/report")}
                 style={{
                   color: "#361901",
                   marginBlockStart: "0",
@@ -80,7 +80,7 @@ function Navbar() {
                   paddingTop: "1em",
                 }}
               >
-                Reports
+                Report
               </Title>
             </Typography>
           </Col>

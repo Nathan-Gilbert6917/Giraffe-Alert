@@ -25,10 +25,11 @@ function Reports() {
       0
     );
     const average_confidence = confidence_sum / confidences.length;
+
     return {
       alerts_count: confidences.length,
       giraffe_count: giraffe_count,
-      average_confidence: average_confidence,
+      average_confidence: Math.round(average_confidence * 100) / 100,
     };
   };
 
@@ -75,7 +76,7 @@ function Reports() {
             <h3>Total Alerts: {reportSummaryData["alerts_count"]}</h3>
             <h3>Total Giraffes: {reportSummaryData["giraffe_count"]}</h3>
             <h3>
-              Average Confidence: {reportSummaryData["average_confidence"]}
+              Average Confidence: {reportSummaryData["average_confidence"]}%
             </h3>
           </div>
           <Flex gap="middle" vertical>
