@@ -53,7 +53,7 @@ function Reports() {
         .then((result) => {
           setReportData(result.body.alerts);
           setReportDate(result.body.report_date);
-          summaryData = generateSummaryData(result.body.alerts);
+          const summaryData = generateSummaryData(result.body.alerts);
           setReportSummaryData(summaryData);
         })
         .catch((error) => {
