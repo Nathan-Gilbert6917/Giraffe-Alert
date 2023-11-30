@@ -65,7 +65,7 @@ function Reports() {
                   <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} >{item[1]}</div>
                   <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} >{item[2]}</div>
                   <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} >{item[3]}</div>
-                  <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} >{item[4]}</div>
+                  <div key={index} style={{backgroundColor: index % 2 ? '#DED0B6' : '#FAEED1', width: '20%', padding: "1%",}} ><a href={item[4]}>{item[4]}</a></div>
                 </Flex>
               )
             })}
