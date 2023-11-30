@@ -16,8 +16,8 @@ function Reports() {
 
     let giraffe_count = 0;
     let confidences = [];
-
-    reportData.forEach((alert) => {
+    console.log(reportData);
+    JSON.parse(reportData).map((alert) => {
       giraffe_count += alert[2];
       confidences.push(alert[3]);
     });
@@ -64,7 +64,7 @@ function Reports() {
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
     const interval = setInterval(handleHourlyReport, time);
     return () => clearInterval(interval);
-  }, [reportData, reportSummaryData]);
+  }, [reportData, reportSummaryData, reportSummaryData]);
 
   return (
     <div className="reports-container">
