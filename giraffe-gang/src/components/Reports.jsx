@@ -12,8 +12,6 @@ function Reports() {
   const [reportSummaryData, setReportSummaryData] = useState({});
 
   const generateSummaryData = (reportData) => {
-    const alerts_count = reportData.length;
-
     let giraffe_count = 0;
     let confidences = [];
     console.log(reportData);
@@ -28,7 +26,7 @@ function Reports() {
     );
     const average_confidence = confidence_sum / confidences.length;
     return {
-      alerts_count: alerts_count,
+      alerts_count: confidences.length,
       giraffe_count: giraffe_count,
       average_confidence: average_confidence,
     };
