@@ -9,6 +9,7 @@
 - At the top of the file inside of main.tf 
 - Update region to your desired region
 - Update image_api_bucket to your desired bucket
+- Update github_access_token to your desired token
 - Update the database username and password if you want to. Otherwise it will be set by default.
 - Save this file
 
