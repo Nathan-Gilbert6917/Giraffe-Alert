@@ -8,6 +8,31 @@ function Reports() {
     process.env.REACT_APP_ENV_API_URL + "/hourly_report"; //replace with instance url
   const isDemo = process.env.REACT_APP_ENV_DEMO;
   const [reportData, setReportData] = useState(null);
+  const [reportDate, setReportDate] = useState("");
+  const [reportSummaryData, setReportSummaryData] = useState({});
+
+  const generateSummaryData = (reportData) => {
+    const alerts_count = reportData.length;
+
+    let giraffe_count = 0;
+    let confidences = [];
+
+    reportData.forEach((alert) => {
+      giraffe_count += alert[2];
+      confidences.push(alert[3]);
+    });
+
+    let confidence_sum = confidences.reduce(
+      (acc, confidence) => acc + confidence,
+      0
+    );
+    const average_confidence = confidence_sum / confidences.length;
+    return {
+      alerts_count: alerts_count,
+      giraffe_count: giraffe_count,
+      average_confidence: average_confidence,
+    };
+  };
 
   const normalizeData = (data) =>
     Object.keys(data).map((key) => ({
@@ -26,7 +51,10 @@ function Reports() {
       })
         .then((response) => response.json())
         .then((result) => {
-          setReportData(result.body);
+          setReportData(result.body.alerts);
+          setReportDate(result.body.report_date);
+          summaryData = generateSummaryData(result.body.alerts);
+          setReportSummaryData(summaryData);
         })
         .catch((error) => {
           console.error(error);
@@ -36,14 +64,22 @@ function Reports() {
     const time = (isDemo === "true" ? 5 : 60) * 60 * 1000; //  Minutes
     const interval = setInterval(handleHourlyReport, time);
     return () => clearInterval(interval);
-  }, []);
+  }, [reportData, reportSummaryData]);
 
   return (
     <div className="reports-container">
-      <h1 className="reports-heading">Reports</h1>
+      <h1 className="reports-heading">Report {reportDate}</h1>
       {/* Add reports content here */}
       {reportData ? (
         <div>
+          <div>
+            <h2>Report Summary</h2>
+            <h3>Total Alerts: {reportSummaryData["alerts_count"]}</h3>
+            <h3>Total Giraffes: {reportSummaryData["giraffe_count"]}</h3>
+            <h3>
+              Average Confidence: {reportSummaryData["average_confidence"]}
+            </h3>
+          </div>
           <Flex gap="middle" vertical>
             <Flex gap="middle" horizontal>
               <div

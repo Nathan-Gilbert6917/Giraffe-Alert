@@ -25,19 +25,24 @@ def retrieve_current_report():
     )
 
     get_report_id_query = """
-        SELECT report_id 
+        SELECT report_id, report_date 
         FROM Reports 
-        ORDER BY report_date LIMIT 1;
+        ORDER BY report_date DESC LIMIT 1;
     """
 
     report_id = ""
+    report_date = ""
     with connection.cursor() as cur:
         cur.execute(get_report_id_query)
         print(cur)
-        report_id = cur.fetchone()[0]
+        report = cur.fetchone()
+        report_id = report[0]
+        report_date = report[1].strftime(
+            "%m/%d/%Y, %H:%M:%S")
     connection.commit()
-    
-    return report_id
+
+    return report_id, report_date
+
 
 def retrieve_alerts(report_id):
     # MySQL connection
@@ -59,8 +64,6 @@ def retrieve_alerts(report_id):
         for x in cur.fetchall():
             alert_ids.append(x[0])
     connection.commit()
-    
-    
 
     get_alerts_query = f"""
         SELECT * FROM Alerts WHERE alert_id IN {tuple(alert_ids)}
@@ -70,7 +73,8 @@ def retrieve_alerts(report_id):
     with connection.cursor() as cur:
         cur.execute(get_alerts_query)
         for x in cur.fetchall():
-            alerts.append((x[0], x[1].strftime("%m/%d/%Y, %H:%M:%S"), x[2], x[3], x[4]))
+            alerts.append((x[0], x[1].strftime(
+                "%m/%d/%Y, %H:%M:%S"), x[2], x[3], x[4]))
     connection.commit()
     print(alerts)
     return alerts
@@ -79,12 +83,16 @@ def retrieve_alerts(report_id):
 def lambda_handler(event, context):
     alerts = ""
     try:
-        report_id = retrieve_current_report()
+        report_id, report_date = retrieve_current_report()
         alerts = retrieve_alerts(report_id)
 
         return {
             'statusCode': 200,
-            'body': json.dumps(alerts)
+            'body': {
+                'alerts': json.dumps(alerts),
+                'report_date': report_date
+            }
+
         }
     except Exception as e:
         print(f"Error: {str(e)}")
