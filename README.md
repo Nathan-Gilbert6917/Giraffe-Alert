@@ -23,7 +23,7 @@ change to the one you set in the terraform file.
 - `sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo`
 - `sudo yum -y install terraform`
 - Validate Terraform is installed by using `terraform -version`
-- Configure AWS CLI by running `aws configure`
+- Configure AWS CLI by running `aws configure` and following the prompts provided
 
 # Moving Files
 Once Terraform is successfully installed you need to transfer the Terraform files to our EC2 instance
