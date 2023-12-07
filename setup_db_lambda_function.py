@@ -1,6 +1,9 @@
 import boto3
 import pymysql
 import os
+import csv
+from datetime import datetime
+from io import StringIO
 
 s3 = boto3.client('s3')
 
@@ -34,7 +37,7 @@ def create_tables():
     connection.close()
 
 
-def preload_data():
+def preload_data(alerts_data, reports_data, reports_alerts_data):
     # MySQL connection
     connection = pymysql.connect(
         host=os.environ['DB_HOST'].split(":")[0],
@@ -45,51 +48,47 @@ def preload_data():
     )
     cursor = connection.cursor()
 
-    sql_query1 = """
-    INSERT INTO Alerts (alert_date, giraffe_count, confidence, image_url)
-    VALUES
-        ('2023-12-05 08:00:00', 1, 95.5443, 'https://detected-images.s3.amazonaws.com/test3c3c106c-b8f6-4e7c-82ec-dea01c310cd1.jpg'),
-        ('2023-12-05 09:30:00', 2, 92.4245, 'https://detected-images.s3.amazonaws.com/test90721dfe-30ef-4124-9a1d-88f26385b744.jpg'),
-        ('2023-12-06 11:15:00', 1, 88.5456, 'https://detected-images.s3.amazonaws.com/test96cc03df-07cc-4403-98aa-bd5cf5577774.jpg'),
-        ('2023-12-06 12:45:00', 1, 91.6452, 'https://detected-images.s3.amazonaws.com/testc424a3f1-f60c-4aab-9729-5de10e061be6.jpg'),
-        ('2023-12-07 14:30:00', 1, 89.6453, 'https://detected-images.s3.amazonaws.com/testf28aaafa-2caa-4287-a9af-a9c9cf2a9a41.jpg'),
-        ('2023-12-07 16:00:00', 1, 94.3456, 'https://detected-images.s3.amazonaws.com/test3c3c106c-b8f6-4e7c-82ec-dea01c310cd1.jpg'),
-        ('2023-12-07 17:15:00', 2, 93.7556, 'https://detected-images.s3.amazonaws.com/test90721dfe-30ef-4124-9a1d-88f26385b744.jpg'),
-        ('2023-12-07 19:00:00', 1, 87.5465, 'https://detected-images.s3.amazonaws.com/test96cc03df-07cc-4403-98aa-bd5cf5577774.jpg'),
-        ('2023-12-08 09:30:00', 1, 86.6575, 'https://detected-images.s3.amazonaws.com/testc424a3f1-f60c-4aab-9729-5de10e061be6.jpg'),
-        ('2023-12-08 10:30:00', 1, 96.6746, 'https://detected-images.s3.amazonaws.com/testf28aaafa-2caa-4287-a9af-a9c9cf2a9a41.jpg');
-    """
-    sql_query2 = """
-    INSERT INTO Reports (report_date)
-    VALUES
-        ('2023-12-05 08:00:00'),
-        ('2023-12-05 09:30:00'),
-        ('2023-12-06 11:15:00'),
-        ('2023-12-06 12:45:00'),
-        ('2023-12-07 14:30:00'),
-        ('2023-12-07 16:00:00'),
-        ('2023-12-07 17:15:00'),
-        ('2023-12-07 19:00:00'),
-        ('2023-12-08 09:45:00'),
-        ('2023-12-08 10:30:00');
-    """
-    sql_query3 = """
-    INSERT INTO Reports_Alerts (report_id, alert_id)
-    VALUES
-        (1, 1),
-        (1, 2),
-        (1, 6),
-        (1, 5),
-        (2, 3),
-        (2, 3),
-        (3, 4),
-        (4, 4), 
-        (5, 5), 
-        (6, 5); 
-    """
-    cursor.execute(sql_query1)
-    cursor.execute(sql_query2)
-    cursor.execute(sql_query3)
+    alerts_csv = StringIO(alerts_data)
+    alerts_reader = csv.reader(alerts_csv)
+    next(alerts_reader)  # Skip header row
+    for row in alerts_reader:
+        row = row[0].split(';')
+        date = row[1].split('"')
+        date = datetime_object = datetime.strptime(
+            date[1], '%Y-%m-%d %H:%M:%S')
+        cursor.execute(
+            "INSERT INTO Alerts (alert_date, giraffe_count, confidence, image_url) VALUES (%s, %s, %s, %s)",
+            (date, int(row[2]), float(row[3]), row[4])
+        )
+
+    print("Reports")
+
+    # Preload Reports data
+    reports_csv = StringIO(reports_data)
+    reports_reader = csv.reader(reports_csv)
+    next(reports_reader)  # Skip header row
+    for row in reports_reader:
+        row = row[0].split(';')
+        date = row[1].split('"')
+        date = datetime_object = datetime.strptime(
+            date[1], '%Y-%m-%d %H:%M:%S')
+        cursor.execute(
+            "INSERT INTO Reports (report_date) VALUES (%s)",
+            (date,)
+        )
+
+    print("Reports Alerts")
+
+    # Preload Reports_Alerts data
+    reports_alerts_csv = StringIO(reports_alerts_data)
+    reports_alerts_reader = csv.reader(reports_alerts_csv)
+    next(reports_alerts_reader)  # Skip header row
+    for row in reports_alerts_reader:
+        row = row[0].split(';')
+        cursor.execute(
+            "INSERT INTO Reports_Alerts (report_id, alert_id) VALUES (%s, %s)",
+            (int(row[1]), int(row[2]))
+        )
     connection.commit()
     # Clean up
     cursor.close()
@@ -98,8 +97,20 @@ def preload_data():
 
 def lambda_handler(event, context):
     try:
-        create_tables()
-        preload_data()
+        # create_tables()
+
+        bucket_name = 'detected-images'
+        alerts_csv = 'alerts.csv'
+        reports_csv = 'reports.csv'
+        reports_alerts_csv = 'reports_alerts.csv'
+        alerts_data = s3.get_object(Bucket=bucket_name, Key=alerts_csv).get(
+            'Body').read().decode('utf-8')
+        reports_data = s3.get_object(Bucket=bucket_name, Key=reports_csv).get(
+            'Body').read().decode('utf-8')
+        reports_alerts_data = s3.get_object(
+            Bucket=bucket_name, Key=reports_alerts_csv).get('Body').read().decode('utf-8')
+
+        preload_data(alerts_data, reports_data, reports_alerts_data)
     except Exception as e:
         return {
             'statusCode': 500,
