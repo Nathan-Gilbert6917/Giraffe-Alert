@@ -30,6 +30,8 @@ function Reports() {
 
     if (isNaN(average)) {
       average = "Cannot calculate confidence";
+    } else {
+      average = average + "%";
     }
 
     return {
@@ -82,7 +84,7 @@ function Reports() {
             <h3>Total Alerts: {reportSummaryData["alerts_count"]}</h3>
             <h3>Total Giraffes: {reportSummaryData["giraffe_count"]}</h3>
             <h3>
-              Average Confidence: {reportSummaryData["average_confidence"]}%
+              Average Confidence: {reportSummaryData["average_confidence"]}
             </h3>
           </div>
           <Flex gap="middle" vertical>
