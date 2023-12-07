@@ -28,7 +28,7 @@ function Reports() {
 
     let average = Math.round(average_confidence * 100) / 100;
 
-    if (average === NaN) {
+    if (isNaN(average)) {
       average = "Cannot calculate confidence";
     }
 
