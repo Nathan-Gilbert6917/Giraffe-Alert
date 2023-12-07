@@ -9,6 +9,7 @@
 # Update main.tf File
 - At the top of the file inside of main.tf:
 - Update region to your desired region
+- Update the terraform_deploy_bucket to the s3 bucket you plan to use to deploy the terraform files in the EC2 
 - Update image_api_bucket to your desired bucket name
 - Update github_access_token to your desired token, set in Developer Settings in Github
 - Update the database username and password if you want to. Otherwise it will be set by default.
