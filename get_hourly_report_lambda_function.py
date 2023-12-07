@@ -54,34 +54,40 @@ def retrieve_alerts(report_id):
         connect_timeout=5
     )
 
-    get_report_alert_ids = f"""
-        SELECT alert_id FROM Reports_Alerts WHERE report_id = {report_id}
-    """
-
-    alert_ids = []
-    with connection.cursor() as cur:
-        cur.execute(get_report_alert_ids)
-        for x in cur.fetchall():
-            alert_ids.append(x[0])
-    connection.commit()
-
-    get_alerts_query = f"""
-        SELECT * FROM Alerts WHERE alert_id IN {tuple(alert_ids)}
-    """
-
     alerts = []
-    with connection.cursor() as cur:
-        cur.execute(get_alerts_query)
-        for x in cur.fetchall():
-            alerts.append((x[0], x[1].strftime(
-                "%m/%d/%Y, %H:%M:%S"), x[2], x[3], x[4]))
-    connection.commit()
-    print(alerts)
+
+    try:
+
+        get_report_alert_ids = f"""
+            SELECT alert_id FROM Reports_Alerts WHERE report_id = {report_id}
+        """
+
+        alert_ids = []
+        with connection.cursor() as cur:
+            cur.execute(get_report_alert_ids)
+            for x in cur.fetchall():
+                alert_ids.append(x[0])
+        connection.commit()
+
+        get_alerts_query = f"""
+            SELECT * FROM Alerts WHERE alert_id IN {tuple(alert_ids)}
+        """
+
+        with connection.cursor() as cur:
+            cur.execute(get_alerts_query)
+            print("Testse")
+            for x in cur.fetchall():
+                alerts.append((x[0], x[1].strftime(
+                    "%m/%d/%Y, %H:%M:%S"), x[2], x[3], x[4]))
+        connection.commit()
+    except:
+        return []
+
     return alerts
 
 
 def lambda_handler(event, context):
-    alerts = ""
+
     try:
         report_id, report_date = retrieve_current_report()
         alerts = retrieve_alerts(report_id)

@@ -14,7 +14,7 @@ function Reports() {
   const generateSummaryData = (reportData) => {
     let giraffe_count = 0;
     let confidences = [];
-    console.log(reportData);
+
     JSON.parse(reportData).map((alert) => {
       giraffe_count += alert[2];
       confidences.push(alert[3]);
@@ -26,10 +26,16 @@ function Reports() {
     );
     const average_confidence = confidence_sum / confidences.length;
 
+    let average = Math.round(average_confidence * 100) / 100;
+
+    if (average === NaN) {
+      average = "Cannot calculate confidence";
+    }
+
     return {
       alerts_count: confidences.length,
       giraffe_count: giraffe_count,
-      average_confidence: Math.round(average_confidence * 100) / 100,
+      average_confidence: average,
     };
   };
 
