@@ -1,6 +1,7 @@
 ## How TO: Run Terraform Script
 
 # Testing Information
+- Get test images from the giraffe-test-image folder in the repo
 - Put images of giraffe into the bucket defined under the image_api_bucket variable in the main.tf file. The default is giraffe_upload.
 - Load time: About 5 minutes
 - Destroy Time: About 5 minutes
