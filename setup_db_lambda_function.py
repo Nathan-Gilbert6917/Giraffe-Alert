@@ -54,11 +54,12 @@ def preload_data(alerts_data, reports_data, reports_alerts_data):
     for row in alerts_reader:
         row = row[0].split(';')
         date = row[1].split('"')
-        date = datetime_object = datetime.strptime(
+        date = datetime.strptime(
             date[1], '%Y-%m-%d %H:%M:%S')
+        url = row[4].split('"')
         cursor.execute(
             "INSERT INTO Alerts (alert_date, giraffe_count, confidence, image_url) VALUES (%s, %s, %s, %s)",
-            (date, int(row[2]), float(row[3]), row[4])
+            (date, int(row[2]), float(row[3]), url[1])
         )
 
     print("Reports")
@@ -70,7 +71,7 @@ def preload_data(alerts_data, reports_data, reports_alerts_data):
     for row in reports_reader:
         row = row[0].split(';')
         date = row[1].split('"')
-        date = datetime_object = datetime.strptime(
+        date = datetime.strptime(
             date[1], '%Y-%m-%d %H:%M:%S')
         cursor.execute(
             "INSERT INTO Reports (report_date) VALUES (%s)",
