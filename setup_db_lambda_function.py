@@ -98,7 +98,7 @@ def preload_data(alerts_data, reports_data, reports_alerts_data):
 
 def lambda_handler(event, context):
     try:
-        # create_tables()
+        create_tables()
 
         bucket_name = 'detected-images'
         alerts_csv = 'alerts.csv'
