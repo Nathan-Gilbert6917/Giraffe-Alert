@@ -186,7 +186,9 @@ function Reports() {
                       padding: "1%",
                     }}
                   >
-                    <a href={item[4]}>Image Link</a>
+                    <a href={item[4]} target="_blank">
+                      Image Link
+                    </a>
                   </div>
                 </Flex>
               );
