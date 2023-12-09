@@ -38,10 +38,11 @@ With our files on our EC2 and Terraform installed, we are now ready to run our s
 - Run `terraform plan` to make sure setup is accurate and everything is being created as it should
 - Run `terraform apply` to run our plan!
 
-# Checking everything is working
-After `terraform apply` completes, check 
+# Using The Application
+After `terraform apply` completes, 
 - Open up the AWS console and go to Amplify.
 - Build the frontend from there.
+- Follow user guide.
 
 # Teardown
 After testing, run `terraform destory` to teardown all the created infrastructure
